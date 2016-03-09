@@ -1,0 +1,39 @@
+{
+  "name": "fcoo-language",
+  "version": "0.1.0",
+  "homepage": "https://github.com/FCOO/fcoo-language",
+  "authors": [
+    "Niels Holt nho@fcoo.dk"
+  ],
+  "description": "",
+  "main": [
+    "dist/fcoo-language.min.js",
+    "dist/fcoo-language.min.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/FCOO/fcoo-language.git"
+  },
+  "dependencies": {
+    "jquery": "latest",
+    "lang-flag-icon": "fcoo/lang-flag-icon#^0.1.1",
+    "jquery-phrase-translator": "fcoo/jquery-phrase-translator#^1.2.0"
+  },
+  "devDependencies": {
+    "bourbon": "latest",
+    "modernizr-mixin": "latest",
+    "mathsass": "latest",
+    "modernizr-scss": "fcoo/modernizr-scss#^1.3.0"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "moduleType": [
+    "es6"
+  ]
+}
