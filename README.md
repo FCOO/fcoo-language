@@ -1,0 +1,2 @@
+# fcoo-language
+MANGLER
