@@ -25,6 +25,10 @@
 //************************************************************************************************************************************
 //LANG-FLAG-ICON
 
+//Adjusting default values
+$lfi-display-value			: '';			// Value for display:... when element is visible. Default = '' => no class created.
+$lfi-incl-table-display	: false;	//	if true classes for table-elements (TABLE, TR,TD etc.) are included 
+
 //$include-squared = if true css for squared flags is also created
 $include-squared: false; 
 
