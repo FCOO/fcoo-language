@@ -44,7 +44,7 @@ Classes for `flag-icon-XX` for country-codes (XX)
 ### `lang-icon-XX`
 Classes for `lang-icon-XX` for language-codes (YY)
 - `da` Danish -> Denmark
-- `en`  English -> UK
+- `en` English -> UK
 - `de` German -> Germany
 - `sv` Swedish -> Sweden
 - `no` Norwegian -> Norway
@@ -61,7 +61,8 @@ Classes for `lang-icon-XX` for language-codes (YY)
 
 
 ## [jquery-phrase-translator]
-**NOT INSTALLED JET**  
+**NOT INSTALLED**
+(`jquery-phrase-translator": "fcoo/jquery-phrase-translator#^1.2.0"`)
 
 
 ## Copyright and License
