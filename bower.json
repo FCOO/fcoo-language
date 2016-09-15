@@ -7,8 +7,8 @@
   ],
   "description": "",
   "main": [
-    "dist/fcoo-language.min.js",
-    "dist/fcoo-language.min.css"
+    "dist/fcoo-language.js",
+    "dist/fcoo-language.css"
   ],
   "repository": {
     "type": "git",
