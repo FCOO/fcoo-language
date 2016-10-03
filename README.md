@@ -1,7 +1,9 @@
 # fcoo-language
 [Modernizr]: https://modernizr.com/
 [lang-flag-icon]: https://github.com/FCOO/lang-flag-icon
-[jquery-phrase-translator]: https://github.com/FCOO/jquery-phrase-translator
+[i18next]: http://i18next.com/
+[jquery-i18next]: https://github.com/i18next/jquery-i18next
+[i18next-intervalplural-postprocessor]: https://github.com/i18next/i18next-intervalplural-postprocessor
 
 >CSS, JS-objects and interface to select language and translate text used by FCOO web applications
 
@@ -9,8 +11,8 @@
 ## Description
 This package includes different packages and contains the css and JavaScript object to set media queries, device detection and set the tests by [Modernizr] needed:
 
+- Set-up for [i18next] and plugins
 - Set-up for [lang-flag-icon]
-- Set-up for [jquery-phrase-translator] - **TODO**
 
 
 ## Installation
@@ -25,6 +27,40 @@ Show list of all installed `flag-icon-XX` and `lang-icon-YY`
 
 ## name-space `window.fcoo`
 All JavaScript objects are create in the name space `window.fcoo`
+
+## [i18next]
+
+### [i18next-intervalplural-postprocessor]
+Post processor for i18next enabling interval plurals
+
+    car_interval: '(1){one car};(2-7){a few cars};(7-inf){a lot of cars};',
+
+    i18next.t('car_interval', { postProcess: 'interval', count: 1   }); // -> one car
+    i18next.t('car_interval', { postProcess: 'interval', count: 4   }); // -> a few cars
+    i18next.t('car_interval', { postProcess: 'interval', count: 100 }); // -> a lot of cars
+
+
+### [jquery-i18next]
+i18next plugin for jquery usage
+Using property `"data-i18n"` to set the i18next-key
+
+    <ul class="nav">
+        <li><a href="#" data-i18n="nav.home"></a></li>
+        <li><a href="#" data-i18n="nav.page1"></a></li>
+        <li><a href="#" data-i18n="nav.page2"></a></li>
+    </ul>
+
+Also works for element properties
+
+    <a id="btn1" href="#" data-i18n="[title]key.for.title"></a>
+
+To update the contents call `localize`
+
+    $("selector").localize([options]);
+
+See [jqueryI18next] for documentation
+
+----------
 
 ##  [lang-flag-icon]
 The following classes is included.
@@ -59,10 +95,6 @@ Classes for `lang-icon-XX` for language-codes (YY)
 - `fo` Faroese
 - `kl` Kalaallisut/Greenlandic
 
-
-## [jquery-phrase-translator]
-**NOT INSTALLED**
-(`jquery-phrase-translator": "fcoo/jquery-phrase-translator#^1.2.0"`)
 
 
 ## Copyright and License

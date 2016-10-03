@@ -29,6 +29,14 @@
 	<hr>
 	<h2 id="lang">Installed lang (icon-lang-YY)</h2>
 
+    <hr>
+    <ul class="nav">
+        <li><a href="#" data-i18n="[title]nav.home;nav.home"></a></li>
+        <li><a href="#" data-i18n="nav.page1"></a></li>
+        <li><a href="#" data-i18n="nav.page2"></a></li>
+        <li><a href="#" data-i18n="nav.position" data-i18n-options='{"count": 19}'></a></li>
+        <li><a href="#" onclick="i18next.changeLanguage( i18next.language == 'en' ? 'da' : 'en');" data-i18n="nav.change"></a></li>
+    </ul>
 	
 	
 	<script src="bower_components.js"></script>
@@ -45,8 +53,6 @@
 			var lang = langFlag.langList[i];
 			$('<div title="lang='+lang+'" class="big flag-icon-background lang-icon-'+lang+'"></div>').insertAfter( h );
 		}
-		
-
 
 	</script>
 </body>

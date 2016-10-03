@@ -11,7 +11,8 @@
         "L"         : false,
         "undefined" : false,
         "moment"    : false,
-        "Raven"     : false
+        "Raven"     : false,
+        "i18next"   : true
     },
 
     "allowInlineConfig": true,
