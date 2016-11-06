@@ -15,12 +15,21 @@
     "url": "git://github.com/FCOO/fcoo-language.git"
   },
   "dependencies": {
-    "jquery": "latest",
-    "lang-flag-icon": "fcoo/lang-flag-icon#latest",
-    "i18next": "^3.4.3",
-    "i18next-browser-languagedetector": "^1.0.0",
-    "jquery-i18next": "^1.1.0",
-    "i18next-intervalplural-postprocessor": "^1.0.0"
+    "jquery"                              : "latest",
+    "lang-flag-icon"                      : "fcoo/lang-flag-icon#~0.1.6",
+    "i18next"                             : "3.4.4",
+    "i18next-browser-languagedetector"    : "1.0.1",
+    "jquery-i18next"                      : "1.1.0",
+    "i18next-intervalplural-postprocessor": "1.0.0"
+  },
+  "resolutions": {
+    "lang-flag-icon"                      : "~0.1.6",
+    "i18next"                             : "3.4.4",
+    "i18next-browser-languagedetector"    : "1.0.1",
+    "jquery-i18next"                      : "1.1.0",
+    "i18next-intervalplural-postprocessor": "1.0.0"
+
+
   },
   "devDependencies": {
     "bourbon": "latest",

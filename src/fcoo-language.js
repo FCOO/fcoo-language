@@ -25,6 +25,11 @@
         //Create fcoo.langFlag
         ns.langFlag = new window.LangFlag({ defaultFlag:'dk', defaultLang: 'da' });
 
+        //Change language inns.langFlag when i18next changes lang
+        i18next.on('languageChanged', function(lng) {
+            ns.langFlag.setLang(lng);
+        });
+
 
         //Create other packages
         var LanguageDetector = new window.i18nextBrowserLanguageDetector({
