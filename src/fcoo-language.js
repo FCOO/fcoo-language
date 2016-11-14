@@ -16,22 +16,64 @@
 
     var ns = window.fcoo; 
 
+//var test = window.niels = window.niels || {};
+
 
     /******************************************
     Initialize/ready 
     *******************************************/
-    $(function() { //"$( function() { ... });" is short for "$(document).ready( function(){...});"
+    $(function() { 
+/* TODO:        
+        var standardLanguage = 'en',            //Standard language is allways english (en)
+            standardLanguages = ['da', 'en'],   //Standard languages is allways danish (da) and english (en)
+            browserLanguage,                    //Language of the browser
+            browserStandardLanguage,            //Standard language of the browser (if available) 
+            i18nLanguageList = [];
+
+        function getLanguage( language_country ){ return language_country.split('-')[0]; }
+        function isStandardLanguage( lang ){ return standardLanguages.indexOf( lang ) > -1; }    //Return true if lang is 'da' or 'en'
+        function otherStandardLanguage( lang ){ 
+            if ( isStandardLanguage( lang ) )
+              return lang == 'da' ? 'en' : 'da';
+            else
+              return 'en';
+            }
+
+        //Try to get browser or system language
+        browserLanguage = getLanguage( navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage || standardLanguage );
+        if ( isStandardLanguage( browserLanguage ) )
+            browserStandardLanguage =  otherStandardLanguage( browserLanguage );
+        else {
+            browserStandardLanguage = standardLanguage;
+            //Try to find a standard language in navigator.languages = list of lang or null
+            if (navigator.languages)
+                for (var i=0; i<navigator.languages.length; i++ ){
+                    var nextLang = getLanguage( navigator.languages[i] );
+                    if ( isStandardLanguage( nextLang ) ){
+                        browserStandardLanguage = nextLang;
+                        break;
+                    }
+                }
+        }
+        
+*/
+        
+        
+
+
+
 
         //Create fcoo.langFlag
         ns.langFlag = new window.LangFlag({ defaultFlag:'dk', defaultLang: 'da' });
 
-        //Change language inns.langFlag when i18next changes lang
+        //Change language in ns.langFlag when i18next changes lang
         i18next.on('languageChanged', function(lng) {
             ns.langFlag.setLang(lng);
         });
 
-
+ 
         //Create other packages
+/* REMOVED
         var LanguageDetector = new window.i18nextBrowserLanguageDetector({
             // order and from where user language should be detected
             order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
@@ -51,28 +93,28 @@
             // optional htmlTag with lang attribute, the default is:
             htmlTag: document.documentElement
         });
-
+*/
 
 
 var nameOfProcessor = {
     type: 'postProcessor',
     name: 'nameOfProcessor',
-    process: function(value, key, options, translator) {
-        console.log('HER',value, key, options, translator);
+    process: function(/*value, key, options, translator*/) {
+        //console.log('HER','value=',value, ' key=',key, ' options=',options, ' translator=', translator);
         /* return manipulated value */
     }
-}
+};
 
 
         /***********************************************************
         Ininialize i18next
         ***********************************************************/
         i18next
-            .use( LanguageDetector )
+ //REMOVED           .use( LanguageDetector )
 .use(nameOfProcessor)
             .use( window.i18nextIntervalPluralPostProcessor )
             .init({
-//              lng: 'da'
+              lng: 'da',
                 useDataAttrOptions: true, 
 
                 debug: true,
@@ -121,12 +163,12 @@ var nameOfProcessor = {
 }
 */
 
-console.log (
+//console.log (
 
 //    i18next.t('nav.position', {count:0}),
 //    i18next.t('nav.bil_interval', {postProcess: 'interval', count:2})
 //    i18next.t('nav.bil_interval', {postProcess: 'nameOfProcessor', count:2})
-);
+//);
         
         
         
