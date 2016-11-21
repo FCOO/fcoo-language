@@ -32,6 +32,27 @@ All JavaScript objects are create in the name space `window.fcoo`
 It supports many different structure of organizing data and translations.
 To unify and simplify the translation of text in FCOOs applications, the following options, structure, and methods are used and recommended.
 
+### Available language
+
+To change witch language that are available:
+#### In `src/fcoo-language.js` change 
+
+	var languages = ['da', 'en',...];
+
+#### In `src/fcoo-language.scss` change
+
+	$lang-list: ( 
+  		da: dk, //Danish -> Denmark
+		en: gb, //English -> UK
+		...
+	)
+
+All translations, phrases etc. MUST always at least be available in Danish or English (both not necessarily in both)
+
+
+
+
+
 ### Selected language
 `fcoo-language` will load selected language via [fcoo-settings](https://github.com/FCOO/fcoo-settings) or set a default language
 
@@ -40,6 +61,17 @@ The current language is always
 	i18next.language
 
 And the event `"languagechanged"` in [fcoo.events](https://github.com/FCOO/fcoo-global-events) is fired when the language is changed.
+
+### Alternative language
+Some of the contents on FCOOs web applications are only available in either Danish (`da`) or English (`en`). 
+If the user has selected a language other than `da` or `en` they select between `da` and `en` to be the second language (saved as `language2` in [fcoo-settings](https://github.com/FCOO/fcoo-settings))
+This is primarily to allow users how has selected Faroese or Greenlandic to see no-translated contents in Danish.
+
+`fcoo-language` also uses the browsers language as an options for alternative languages
+
+It is also possible that some phrases are translated into languages not in the list of available languages. Eq. links to home-pages often are in national language and English
+
+Event `"languagechanged"` is also fired when alternative language (`language2`) is changed
 
 ### Options
 Using [default i18next options](http://i18next.com/docs/options/#init-options) for initializing i18next with one exception:
@@ -59,16 +91,20 @@ The following namespaces are recommended to use:
 - `link`: Url for different homepages. Eq: `link:fcoo.dk = {da: "http://fcoo.dk", en:"http://fcoo.dk/?lang=en"`
 - `button`: Standard text to buttons. `button:close = {da: "Luk", en:"Close"}`
 - `unit`: Physical units: Eq. `unit:metre = {da:"meter", en:"metre"}`
+- `link`: The link-address to a home-page. Use the address as key. Eq. key = `link:dmi.dk`, translation `da:"http://dmi.dk"`, `en:"http://dmi.dk/en"`
+- `name`: Full name of institutions or organisations. Use national abbreviation as key. Eq. key = `name:bsh`, translation `en:"Federal Maritime and Hydrographic Agency", de:"Bundesamt für Seeschifffahrt und Hydrographie"`
+
+
 
 
 
 ### Adding translation
 Default 1-dim json-structure for i18next is 
 
-            { lang1: { 
+            { langA: { 
                 namespace: { key: value1 }
               },
-              lang2: { 
+              langB: { 
                 namespace: { key: value2 }
               }
             }
@@ -82,8 +118,8 @@ To make adding translation easier a new format is supported:
 
             { namespace: {
                 key: {
-                  lang1: value1,
-                  lang2: value2
+                  langA: valueA,
+                  langB: valueB
                 }
             }
 
