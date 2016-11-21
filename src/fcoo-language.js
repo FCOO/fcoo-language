@@ -13,198 +13,210 @@
     
     //Create fcoo-namespace
     window.fcoo = window.fcoo || {};
-
     var ns = window.fcoo; 
 
-//var test = window.niels = window.niels || {};
+    //global events "languagechanged" fired when the language is changed
+    var languagechanged = "languagechanged";
+    
+    //*****************************************************************************
+    // All available languages.  
+    // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
+    //******************************************************************************
+    var languages = ['da', 'en',  'fo', 'kl' /*', de', 'sv', 'no'*/];
+    //******************************************************************************
 
+    var standardLanguage  = 'en',         //Standard language is allways english (en)
+        standardLanguages = ['da', 'en']; //Standard languages is allways danish (da) and english (en)
 
-    /******************************************
-    Initialize/ready 
-    *******************************************/
-    $(function() { 
-/* TODO:        
-        var standardLanguage = 'en',            //Standard language is allways english (en)
-            standardLanguages = ['da', 'en'],   //Standard languages is allways danish (da) and english (en)
-            browserLanguage,                    //Language of the browser
-            browserStandardLanguage,            //Standard language of the browser (if available) 
-            i18nLanguageList = [];
+    //getLanguage( 'da-DK') => 'da'    
+    function getLanguage( language_country ){ return language_country.split('-')[0]; }
 
-        function getLanguage( language_country ){ return language_country.split('-')[0]; }
-        function isStandardLanguage( lang ){ return standardLanguages.indexOf( lang ) > -1; }    //Return true if lang is 'da' or 'en'
+    //validateLanguage( lang ): Return lang if it is in languages Else return ''
+    function validateLanguage( lang ){ return languages.indexOf( lang ) > -1 ? lang : ''; }
+        
+    //isStandardLanguage( lang ) Return lang if lang is in standardLanguages ('da' or 'en') Else return ''
+    function isStandardLanguage( lang ){ return standardLanguages.indexOf( lang ) > -1 ? lang : ''; }    
+    
+    
+        //browserLanguage = Language of the browser
+    var browserLanguage = getLanguage( navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage || standardLanguage ),
+        
+        //defaultLanguage = valid value of: param 'lang' OR the browser language OR 'en'
+        defaultLanguage = validateLanguage( window.Url.queryString('lang') ) ||
+                          validateLanguage( browserLanguage ) ||
+                          standardLanguage;
+
+    //The ?lang=... is removed. Is only used if no 'language' is set in fcoo.settings
+    window.Url.updateSearchParam('lang');
+    
+   
+    /***********************************************************
+    Set up and load language via fcoo.settings
+    ***********************************************************/
+    window.fcoo.settings.add({
+        id          : 'language', 
+        validator   : validateLanguage,
+        applyFunc   : function( lang ){ i18next.changeLanguage( lang ); }, 
+        defaultValue: defaultLanguage,
+        callApply   : false
+    });
+
+    //language used when initialize i18next
+    var language = window.fcoo.settings.get( 'language' ),
+        fallbackLng = [];
+
+    fallbackLng = ['en'];
+/*
         function otherStandardLanguage( lang ){ 
             if ( isStandardLanguage( lang ) )
               return lang == 'da' ? 'en' : 'da';
             else
-              return 'en';
+              return standardLanguage;
             }
-
-        //Try to get browser or system language
-        browserLanguage = getLanguage( navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage || standardLanguage );
-        if ( isStandardLanguage( browserLanguage ) )
-            browserStandardLanguage =  otherStandardLanguage( browserLanguage );
-        else {
-            browserStandardLanguage = standardLanguage;
-            //Try to find a standard language in navigator.languages = list of lang or null
-            if (navigator.languages)
-                for (var i=0; i<navigator.languages.length; i++ ){
-                    var nextLang = getLanguage( navigator.languages[i] );
-                    if ( isStandardLanguage( nextLang ) ){
-                        browserStandardLanguage = nextLang;
-                        break;
-                    }
-                }
-        }
-        
 */
-        
-        
+                
 
 
-
-
-        //Create fcoo.langFlag
-        ns.langFlag = new window.LangFlag({ defaultFlag:'dk', defaultLang: 'da' });
-
-        //Change language in ns.langFlag when i18next changes lang
-        i18next.on('languageChanged', function(lng) {
-            ns.langFlag.setLang(lng);
-        });
-
+    
+    
  
-        //Create other packages
-/* REMOVED
-        var LanguageDetector = new window.i18nextBrowserLanguageDetector({
-            // order and from where user language should be detected
-            order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /***********************************************************
+    Create fcoo.langFlag
+    ***********************************************************/
+    ns.langFlag = new window.LangFlag({ defaultFlag:'dk', defaultLang: 'da' });
 
-            // keys or params to lookup language from
-            lookupQuerystring: 'lang',
-            lookupCookie: 'i18next',
-            lookupLocalStorage: 'i18nextLng',
+    //Change language in ns.langFlag when language is changed
+    window.fcoo.events.on( languagechanged, function(){
+        ns.langFlag.setLang( i18next.language );
+    });
 
-            // cache user language on
-            caches: ['localStorage', 'cookie'],
 
-            // optional expire and domain for set cookie
-            cookieMinutes: 10,
-            cookieDomain: 'myDomain',
+    /***********************************************************************************
+    Extend i18next
+    ************************************************************************************
+    Default 1-dim json-structure for i18next is 
+        { lang1: { 
+            namespace: { key: value1 }
+          },
+          lang2: { 
+            namespace: { key: value2 }
+          }
+        }
+    To make adding translation easier a new format is supported: 
+        { namespace: {
+            key: {
+              lang1: value1,
+              lang2: value2
+            }
+        }
+    Two methods areadded to i18next:
+        addPhrase( key, [namespace,] langValue) 
+        - key {string} can be a combined namespace:key string. 
+        - langValue = { {lang: value}xN }
+        addPhrases( [namespace,] keyLangValue )
+        - keyLangValue = { key: {lang: value}xN }, key2: {lang: value}xN } }
+    ***********************************************************************************/
+    i18next.addPhrase = function( namespace, key, langValue ){
+        if (arguments.length == 2){
+            langValue = arguments[1];
+            if (arguments[0].indexOf(':') > -1){
+              key = arguments[0].split(':')[1];
+              namespace = arguments[0].split(':')[0];
+            }
+            else {
+                key = arguments[0];
+                namespace = this.options.defaultNS[0];
+            }
+        }
+        var _this = this;
 
-            // optional htmlTag with lang attribute, the default is:
-            htmlTag: document.documentElement
+        $.each( langValue, function( lang, value ){
+            _this.addResource(lang, namespace, key, value);
         });
-*/
+        return this;
+    };
+    i18next.addPhrases = function( namespace, keyLangValue ){
+        var _this = this;
+        $.each( keyLangValue, function( key, langValue ){
+            _this.addPhrase( namespace, key, langValue );
+        });
+        return this;
+    };
+        
+
+    /***********************************************************
+    Ininialize i18next
+    ***********************************************************/
+    i18next.init({
+        lng         : language,
+        fallbackLng : fallbackLng,
+        keySeparator: '#',
+
+        useDataAttrOptions: true, 
+        initImmediate     : false, //prevents resource loading in init function inside setTimeout (default async behaviour)
+        resources         : {},    //Empty bagend
+
+        //debug: true,
+    });
+    i18next.use( window.i18nextIntervalPluralPostProcessor );
+
+        
+    //Fire languagechenged when language is changed
+    i18next.on('languageChanged', function() {
+        window.fcoo.events.fire( languagechanged );
+    });
 
 
-var nameOfProcessor = {
+    /***********************************************************
+    jquery-i18next - i18next plugin for jquery 
+    https://github.com/i18next/jquery-i18next
+    ***********************************************************/
+    window.jqueryI18next.init(i18next/*i18nextInstance*/, $, {
+        tName         : 't',               // --> appends $.t = i18next.t
+        i18nName      : 'i18n',            // --> appends $.i18n = i18next
+        handleName    : 'localize',        // --> appends $(selector).localize(opts);
+        selectorAttr  : 'data-i18n',       // selector for translating elements
+        targetAttr    : 'i18n-target',     // data-() attribute to grab target element to translate (if diffrent then itself)
+        optionsAttr   : 'i18n-options',    // data-() attribute that contains options, will load/set if useOptionsAttr = true
+        useOptionsAttr: true,             // see optionsAttr
+        parseDefaultValueFromContent: true // parses default values from content ele.val or ele.text
+    });
+
+
+    //Update all element when language changes
+    window.fcoo.events.on( languagechanged, function() { 
+        $("*").localize();        
+    });
+
+
+    //Template to adding own proccessor
+/*
+    var nameOfProcessor = {
     type: 'postProcessor',
     name: 'nameOfProcessor',
-    process: function(/*value, key, options, translator*/) {
-        //console.log('HER','value=',value, ' key=',key, ' options=',options, ' translator=', translator);
-        /* return manipulated value */
-    }
-};
-
-
-        /***********************************************************
-        Ininialize i18next
-        ***********************************************************/
-        i18next
- //REMOVED           .use( LanguageDetector )
-.use(nameOfProcessor)
-            .use( window.i18nextIntervalPluralPostProcessor )
-            .init({
-              lng: 'da',
-                useDataAttrOptions: true, 
-
-                debug: true,
-                postProcess: ['nameOfProcessor'],
-                resources: {
-                    "en": {
-                        "translation": {
-                            "nav": {
-                                "home"  : "Home",
-                                "page1" : "Page One",
-                                "page2" : "Page Two",
-                                "change": "Change",
-                                "position": "position",
-                                "position_plural": "positions"
-
-                            }
-                        }
-                    },
-                    "da": {
-                        "translation": {
-                            "nav": {
-                                "home"  : "Hjem",
-                                "page1" : "Side Et",
-                                "page2" : "Side To",
-                                "change": "Skift",
-                                "position": "position",
-                                "position_plural": "{{count}} positioner",
-                                "bil_interval": "(1){en bil};(2-3){2-3 biler};(4-inf){mange biler};",
-                                 
-                            }
-                        }
-                    }
-
-                }
-
-            });
-
-
-
-/*
-{
-  type: 'postProcessor',
-  name: 'nameOfProcessor',
-  process: function(value, key, options, translator) {
-  }
-}
+    process: function( value, key, options, translator ) {
+                // manipulate value
+                return value;
+            }
+    };
+    i18next.use(nameOfProcessor);
 */
-
-//console.log (
-
-//    i18next.t('nav.position', {count:0}),
-//    i18next.t('nav.bil_interval', {postProcess: 'interval', count:2})
-//    i18next.t('nav.bil_interval', {postProcess: 'nameOfProcessor', count:2})
-//);
-        
-        
-        
-        /***********************************************************
-        jquery-i18next - i18next plugin for jquery 
-        https://github.com/i18next/jquery-i18next
-        ***********************************************************/
-        window.jqueryI18next.init(i18next/*i18nextInstance*/, $, {
-            tName         : 't',               // --> appends $.t = i18next.t
-            i18nName      : 'i18n',            // --> appends $.i18n = i18next
-            handleName    : 'localize',        // --> appends $(selector).localize(opts);
-            selectorAttr  : 'data-i18n',       // selector for translating elements
-            targetAttr    : 'i18n-target',     // data-() attribute to grab target element to translate (if diffrent then itself)
-            optionsAttr   : 'i18n-options',    // data-() attribute that contains options, will load/set if useOptionsAttr = true
-            useOptionsAttr: false,             // see optionsAttr
-            parseDefaultValueFromContent: true // parses default values from content ele.val or ele.text
-        });
-
-        $("*").localize();        
-
-        //Update all element when language changes
-        i18next.on('languageChanged', function() {
-            $("*").localize();        
-        });
-
-
-
-
-
-
-
-
-
-    }); //End of initialize/ready
-    //******************************************
-
-
+    
+    //Initialize/ready 
+    $(function() { 
+        //Update all language related elements
+        window.fcoo.settings.set('language', language );
+    }); 
 
 }(jQuery, this, document));

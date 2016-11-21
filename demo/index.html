@@ -24,35 +24,69 @@
 
 
 <body>
-	<h2 id="flag">Installed flags (icon-flag-XX)</h2>
+    <h2 class="show-for-lang-da">Sprog</h2>
+    <h2 class="show-for-lang-en">Language</h2>
+        <div class="big flag-icon-background lang-icon-da show-for-lang-da"></div>
+        <div class="big flag-icon-background lang-icon-en show-for-lang-en"></div>
+
+	<hr>
+    
+    <h2 id="flag">Installed flags (icon-flag-XX)</h2>
 
 	<hr>
 	<h2 id="lang">Installed lang (icon-lang-YY)</h2>
 
     <hr>
+
     <ul class="nav">
-        <li><a href="#" data-i18n="[title]nav.home;nav.home"></a></li>
-        <li><a href="#" data-i18n="nav.page1"></a></li>
-        <li><a href="#" data-i18n="nav.page2"></a></li>
-        <li><a href="#" data-i18n="nav.position" data-i18n-options='{"count": 19}'></a></li>
-        <li><a href="#" onclick="i18next.changeLanguage( i18next.language == 'en' ? 'da' : 'en');" data-i18n="nav.change"></a></li>
+        <li><a href="#" data-i18n="[title]nav:home;nav:home" data-i18n-options="{lng:'da'}"></a></li>
+        <li><a href="#" data-i18n="nav:page1"></a></li>
+        <li><a href="#" data-i18n="nav:page2"></a></li>
+        <li><a href="#" data-i18n="nav:position" data-i18n-options='{"count": 19}'></a></li>
+        <li><a href="#" onclick="fcoo.settings.set( 'language', i18next.language == 'en' ? 'da' : 'en', false);" data-i18n="nav:change"></a></li>
     </ul>
-	
+
 	
 	<script src="bower_components.js"></script>
 	<script src="../src/fcoo-language.js"></script>
 	<script>
-		var langFlag = new window.LangFlag();
+		//var langFlag = new window.LangFlag();
 		var h = $('#flag');
-		for (var i=0; i<langFlag.flagList.length; i++ ){
-			var flag = langFlag.flagList[i];
+		for (var i=0; i<fcoo.langFlag.flagList.length; i++ ){
+			var flag = fcoo.langFlag.flagList[i];
 			$('<div title="flag='+flag+'" class="big flag-icon-background flag-icon-'+flag+'"></div>').insertAfter( h );
 		}
 		var h = $('#lang');
-		for (var i=0; i<langFlag.langList.length; i++ ){
-			var lang = langFlag.langList[i];
+		for (var i=0; i<fcoo.langFlag.langList.length; i++ ){
+			var lang = fcoo.langFlag.langList[i];
 			$('<div title="lang='+lang+'" class="big flag-icon-background lang-icon-'+lang+'"></div>').insertAfter( h );
 		}
+
+        i18next
+            .addPhrase("Dette_er_en_test", {en:"This is a test", da:"Dette er en test"})
+            .addPhrases( "nav", {
+                "home"      : {en: "Home",      da: "Hjem med æøå"},
+                "page1"     : {en: "Page One",  da: "Side Et"},
+                "page2"     : {en: "Page Two",  da: "Side To"},
+                "firstpage" : {en: "First page",  da: "Første side"},
+                "change"    : {en: "Change",    da: "Skift"},
+
+                "position"       : {en: "position",            da: "position"},
+                "position_plural": {en: "{{count}} positions", da: "{{count}} positioner"},
+
+                "car_interval": {en: "(1){one car};(2-3){flere biler};(4-inf){mange biler};",
+                                 da: "(1){en bil};(2-3){a few cars};(4-inf){many cars};}" }
+            } );
+
+
+        i18next.addPhrase("This is fallback value", {no:"Dette er på dansk"});
+        //console.log(i18next.t("This is fallback value"));
+    $(function() { 
+        var li = $('<li>').prependTo( $('.nav') );
+        var a = $('<a href="#" data-i18n="nav:firstpage">').appendTo(li);
+        a.localize();        
+    
+    }); 
 
 	</script>
 </body>

@@ -45,14 +45,15 @@ $flag-modernizr-list: (
 
 
 //$lang-list = list of language-code (YY) and the selected flag/country-codes (XX)
+// **NOTE ** THIS LIST MUST MATCH THE LIST languages IN src/fcoo-language.js
 $lang-list: (
   da: dk, //Danish -> Denmark
   en: gb, //English -> UK
-  de: de, //German -> Germany
-  sv: se, //Swedish -> Sweden
-  no: no, //Norwegian -> Norway
-  fo: fo, //Faroese -> Faroe Islands
+  fo: fo, //Faroese -> Faroe Islands 
   kl: gl  //Kalaallisut/Greenlandic -> Greenland
+/*  de: de, //German -> Germany */
+/*  sv: se, //Swedish -> Sweden */
+/*  no: no, //Norwegian -> Norway */
 );
 
 //$lang-modernizr-list = list of language-codes (YY) where modernizr-classes are created (show-for-lang-YY, hide-for-lang-YY) 
@@ -60,8 +61,15 @@ $lang-list: (
 $lang-modernizr-list: (
     da: false,
     en: false,
-    fo: false,
-    kl: false
+/*    fo: false, */
+/*    kl: false, */
 ); 
 
 @import "../bower_components/lang-flag-icon/src/lang-flag-icon";
+
+
+//If the primary selected language is not Danish or English, Danish or English must be selected as second language "lang2"
+//Create the Modernizr-classes for 'show-for-lang2-DA/EN' and 'hide-for-lang2-DA/EN' wher DA/EN = 'da' or 'en'
+@each $lang in (da, en) {
+	@include show-and-hide-for-modernizr-test( 'lang2-' + $lang , 'html', false, $lfi-display-value, $lfi-incl-table-display);
+}

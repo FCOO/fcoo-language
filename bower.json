@@ -1,48 +1,50 @@
 {
-  "name": "fcoo-language",
-  "version": "1.0.0",
-  "homepage": "https://github.com/FCOO/fcoo-language",
-  "authors": [
-    "Niels Holt nho@fcoo.dk"
-  ],
-  "description": "",
-  "main": [
-    "dist/fcoo-language.js",
-    "dist/fcoo-language.css"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/FCOO/fcoo-language.git"
-  },
-  "dependencies": {
-    "jquery": "latest",
-    "lang-flag-icon": "fcoo/lang-flag-icon#~0.1.6",
-    "i18next": "~3.5.0",
-    "jquery-i18next": "1.1.0",
-    "i18next-intervalplural-postprocessor": "1.0.0"
-  },
-  "resolutions": {
-    "lang-flag-icon": "~0.1.6",
-    "i18next": "3.4.4",
-    "i18next-browser-languagedetector": "1.0.1",
-    "jquery-i18next": "1.1.0",
-    "i18next-intervalplural-postprocessor": "1.0.0"
-  },
-  "devDependencies": {
-    "bourbon": "latest",
-    "modernizr-mixin": "latest",
-    "mathsass": "latest",
-    "modernizr-scss": "fcoo/modernizr-scss#latest"
-  },
-  "license": "MIT",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ],
-  "moduleType": [
-    "es6"
-  ]
+    "name": "fcoo-language",
+    "version": "1.0.0",
+    "homepage": "https://github.com/FCOO/fcoo-language",
+    "authors": [
+        "Niels Holt nho@fcoo.dk"
+    ],
+    "description": "",
+    "main": [
+        "dist/fcoo-language.js",
+        "dist/fcoo-language.css"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/FCOO/fcoo-language.git"
+    },
+    "dependencies": {
+        "jquery": "latest",
+        "lang-flag-icon": "fcoo/lang-flag-icon#~0.1.6",
+        "i18next": "~3.5.0",
+        "jquery-i18next": "1.1.0",
+        "i18next-intervalplural-postprocessor": "1.0.0",
+        "fcoo-global-events": "fcoo/fcoo-global-events#latest",
+        "fcoo-settings": "fcoo/fcoo-settings#latest"
+    },
+    "resolutions": {
+        "lang-flag-icon": "~0.1.6",
+        "i18next": "3.4.4",
+        "i18next-browser-languagedetector": "1.0.1",
+        "jquery-i18next": "1.1.0",
+        "i18next-intervalplural-postprocessor": "1.0.0"
+    },
+    "devDependencies": {
+        "bourbon": "latest",
+        "modernizr-mixin": "latest",
+        "mathsass": "latest",
+        "modernizr-scss": "fcoo/modernizr-scss#latest"
+    },
+    "license": "MIT",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "moduleType": [
+        "es6"
+    ]
 }

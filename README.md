@@ -5,15 +5,13 @@
 [jquery-i18next]: https://github.com/i18next/jquery-i18next
 [i18next-intervalplural-postprocessor]: https://github.com/i18next/i18next-intervalplural-postprocessor
 
->CSS, JS-objects and interface to select language and translate text used by FCOO web applications
+>i18next, CSS, JS-objects and interface to select language and translate text used by FCOO web applications
 
 
 ## Description
-This package includes different packages and contains the css and JavaScript object to set media queries, device detection and set the tests by [Modernizr] needed:
+FCOOs applications using [i18next] to translate.
 
-- Set-up for [i18next] and plugins
-- Set-up for [lang-flag-icon]
-
+This package includes set-up for [i18next] and other packages with css and JavaScript object to set language, icons and [Modernizr] tests.
 
 ## Installation
 ### bower
@@ -30,10 +28,121 @@ All JavaScript objects are create in the name space `window.fcoo`
 
 ## [i18next]
 
+[i18next] is a *very popular internationalization library for browser or any other javascript environment*
+It supports many different structure of organizing data and translations.
+To unify and simplify the translation of text in FCOOs applications, the following options, structure, and methods are used and recommended.
+
+### Selected language
+`fcoo-language` will load selected language via [fcoo-settings](https://github.com/FCOO/fcoo-settings) or set a default language
+
+The current language is always 
+	
+	i18next.language
+
+And the event `"languagechanged"` in [fcoo.events](https://github.com/FCOO/fcoo-global-events) is fired when the language is changed.
+
+### Options
+Using [default i18next options](http://i18next.com/docs/options/#init-options) for initializing i18next with one exception:
+  	default namespace = `"translation"`
+	namespace-key separator: `":"`
+	key separator is changed to `"#"`
+
+This makes it possible to use `"."` in keys eq. `link:fcoo.dk`
+
+### Key and Namespace
+[i18next] supports the use of multi level keys and namespace, but to keep it simple FCOOs applications will only use 1-dim keys and none or 1-dim namespace.
+	i18next.t( "button:ok" ); 	//key="ok", namespace="button"
+	i18next.t( "sealevel" );	//Key="sealevel", namespace=default
+
+#### FCOO namespaces
+The following namespaces are recommended to use:
+- `link`: Url for different homepages. Eq: `link:fcoo.dk = {da: "http://fcoo.dk", en:"http://fcoo.dk/?lang=en"`
+- `button`: Standard text to buttons. `button:close = {da: "Luk", en:"Close"}`
+- `unit`: Physical units: Eq. `unit:metre = {da:"meter", en:"metre"}`
+
+
+
+### Adding translation
+Default 1-dim json-structure for i18next is 
+
+            { lang1: { 
+                namespace: { key: value1 }
+              },
+              lang2: { 
+                namespace: { key: value2 }
+              }
+            }
+Using the following methods to add translations
+
+	i18next.addResource(lng, ns, key, value, options) //Adds one key/value.
+	i18next.addResources(lng, ns, resources) //Adds multiple key/values. 
+
+
+To make adding translation easier a new format is supported: 
+
+            { namespace: {
+                key: {
+                  lang1: value1,
+                  lang2: value2
+                }
+            }
+
+Two methods are added to i18next:
+
+            i18next.addPhrase( key, [namespace,] langValue) 
+            i18next.addPhrases( [namespace,] keyLangValue )
+Where 
+- `key` {string} can be a combined namespace:key string, and
+- `langValue` = `{ {lang: value}xN }`
+- `keyLangValue` = `{ key: {lang: value}xN }, key2: {lang: value}xN } }`
+
+#### Example
+
+	i18next.addPhrase( 'button:cancel', { en: 'Cancel', da:'Annuller' });
+	//or
+	i18next.addResource('en', 'button', 'cancel', 'Cancel');
+	i18next.addResource('da', 'button', 'cancel', 'Annuller');
+
+### Singular/Plural
+
+`[KEY]` = Singular
+`[KEY]_plural` = Plural
+
+Translate with `optons={count:...}`
+
+#### Example
+
+	{	"en": {
+    		"translation": {
+      			"key": "item",
+      			"key_plural": "items",
+      			"keyWithCount": "{{count}} item",
+      			"keyWithCount_plural": "{{count}} items"
+    		}
+		}
+	}
+
+Would give the following translations
+
+	i18next.t('key', {count: 0}); // output: 'items'
+	i18next.t('key', {count: 1}); // output: 'item'
+	i18next.t('key', {count: 5}); // output: 'items'
+	i18next.t('key', {count: 100}); // output: 'items'
+	i18next.t('keyWithCount', {count: 0}); // output: '0 items'
+	i18next.t('keyWithCount', {count: 1}); // output: '1 item'
+	i18next.t('keyWithCount', {count: 5}); // output: '5 items'
+	i18next.t('keyWithCount', {count: 100}); // output: '100 items'
+
+
+## i18next plugins
+
 ### [i18next-intervalplural-postprocessor]
 Post processor for i18next enabling interval plurals
 
-    car_interval: '(1){one car};(2-7){a few cars};(7-inf){a lot of cars};',
+    i18next.addPhrase('car_interval', {
+		en: '(1){one car};(2-7){a few cars};(7-inf){a lot of cars};',
+		da: '(1){en bil};(2-7){et par biler};(7-inf){en masse biler};'
+	});
 
     i18next.t('car_interval', { postProcess: 'interval', count: 1   }); // -> one car
     i18next.t('car_interval', { postProcess: 'interval', count: 4   }); // -> a few cars
@@ -94,7 +203,6 @@ Classes for `lang-icon-XX` for language-codes (YY)
 - `en` English
 - `fo` Faroese
 - `kl` Kalaallisut/Greenlandic
-
 
 
 ## Copyright and License
