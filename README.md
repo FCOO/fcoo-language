@@ -47,7 +47,7 @@ To change witch language that are available:
 		...
 	)
 
-All translations, phrases etc. MUST always at least be available in Danish or English (both not necessarily in both)
+All translations, phrases etc. MUST always at least be available in Danish or English (but not necessarily in both)
 
 
 
@@ -138,6 +138,23 @@ Where
 	//or
 	i18next.addResource('en', 'button', 'cancel', 'Cancel');
 	i18next.addResource('da', 'button', 'cancel', 'Annuller');
+
+### Sentence
+Sometime a translation is so local that it do not need to be added as a key.
+Eq. in error-messages where the contents is specific to a given error
+
+In these cases a new method is added to i18next:
+
+	i18next.sentence( langValue, options )
+	//or
+	i18next.s( langValue, options )
+
+Where  `langValue = { {lang: value}xN }`
+
+#### Example
+
+	var str = i18next.sentence({ en: 'This is a sentence in English', da:'Dette er en sætning på dansk' }); 
+
 
 ### Singular/Plural
 

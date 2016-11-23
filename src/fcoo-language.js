@@ -142,9 +142,9 @@
     });
 
 
-    /***********************************************************************************
+    /***********************************************************************
     Extend i18next
-    ************************************************************************************
+    ************************************************************************
     Default 1-dim json-structure for i18next is 
         { lang1: { 
             namespace: { key: value1 }
@@ -160,13 +160,28 @@
               lang2: value2
             }
         }
-    Two methods areadded to i18next:
+
+    
+    Four methods areadded to i18next:
         addPhrase( key, [namespace,] langValue) 
         - key {string} can be a combined namespace:key string. 
         - langValue = { {lang: value}xN }
+
         addPhrases( [namespace,] keyLangValue )
         - keyLangValue = { key: {lang: value}xN }, key2: {lang: value}xN } }
-    ***********************************************************************************/
+
+        sentence ( langValue, options )
+        - langValue = { {lang: value}xN }
+
+        s ( langValue, options )
+        - langValue = { {lang: value}xN }
+    ***********************************************************************/
+
+    /***********************************************************************
+    addPhrase( key, [namespace,] langValue) 
+    - key {string} can be a combined namespace:key string. 
+    - langValue = { {lang: value}xN }
+    ***********************************************************************/
     i18next.addPhrase = function( namespace, key, langValue ){
         if (arguments.length == 2){
             langValue = arguments[1];
@@ -186,6 +201,11 @@
         });
         return this;
     };
+
+    /***********************************************************************
+    addPhrases( [namespace,] keyLangValue )
+    - keyLangValue = { key: {lang: value}xN }, key2: {lang: value}xN } }
+    ***********************************************************************/
     i18next.addPhrases = function( namespace, keyLangValue ){
         var _this = this;
         $.each( keyLangValue, function( key, langValue ){
@@ -194,6 +214,52 @@
         return this;
     };
         
+    /***********************************************************************
+    TODO 
+    loadPhrases( jsonFileName );
+    namespaceKeyLangValue = 
+        {   namespaceA: {
+                keyA: {
+                    langA: "The text",
+                    langB: "Tekst"
+                },
+                keyB: {
+                    ...
+                }
+            },
+            namespaceB :{
+                ...
+            }
+        }
+    ***********************************************************************/
+    
+    
+    /***********************************************************************
+    sentence ( langValue, options )
+    - langValue = { {lang: value}xN }
+    A single translation of a sentence. No key used or added
+    ***********************************************************************/
+    i18next.sentence = function( langValue, options ){
+        var nsTemp = '__TEMP__',
+            keyTemp = '__KEY__',
+            _this = this;
+        
+        //Remove any data from nsTemp
+        $.each( languages, function( index, lang ){
+            _this.removeResourceBundle(lang, nsTemp);
+        });
+        this.addPhrase( nsTemp, keyTemp, langValue );
+        return this.t(nsTemp + this.options.nsSeparator + keyTemp, options );
+    };
+
+    /***********************************************************************
+    s ( langValue, options )
+    - langValue = { {lang: value}xN }
+    ***********************************************************************/
+    i18next.s = function( langValue, options ){
+        return this.sentence( langValue, options );
+    };
+
 
     /***********************************************************
     Ininialize i18next
@@ -262,5 +328,13 @@
         //Update all language related elements
         window.fcoo.settings.set('language', language );
     }); 
+
+//i18next.changeLanguage('da');
+i18next.addResource('da', 'temp', '_XX_', 'Dette er en test');
+console.log( i18next.t('temp:_XX_') );
+i18next.addResource('da', 'temp', '_XX_', 'Dette er en NY test');
+console.log( '#1', i18next.s({en:'ENGLISH', 'da':'DANISH'}) );
+console.log( '#2', i18next.s({'da':'DANISH2'}) );
+
 
 }(jQuery, this, document));
