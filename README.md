@@ -88,11 +88,10 @@ This makes it possible to use `"."` in keys eq. `link:fcoo.dk`
 
 #### FCOO namespaces
 The following namespaces are recommended to use:
-- `link`: Url for different homepages. Eq: `link:fcoo.dk = {da: "http://fcoo.dk", en:"http://fcoo.dk/?lang=en"`
+- `link`: The link-address to a home-page. Use the address as key. Eq. key = `link:dmi.dk`, translation `da:"http://dmi.dk"`, `en:"http://dmi.dk/en"`
 - `button`: Standard text to buttons. `button:close = {da: "Luk", en:"Close"}`
 - `unit`: Physical units: Eq. `unit:metre = {da:"meter", en:"metre"}`
-- `link`: The link-address to a home-page. Use the address as key. Eq. key = `link:dmi.dk`, translation `da:"http://dmi.dk"`, `en:"http://dmi.dk/en"`
-- `name`: Full name of institutions or organisations. Use national abbreviation as key. Eq. key = `name:bsh`, translation `en:"Federal Maritime and Hydrographic Agency", de:"Bundesamt für Seeschifffahrt und Hydrographie"`
+- `name`: Full name of institutions or organisations. Use national abbreviation as key and include name in national language. Eq. key = `name:bsh`, translation `en:"Federal Maritime and Hydrographic Agency", de:"Bundesamt für Seeschifffahrt und Hydrographie"`
 
 
 
@@ -123,14 +122,30 @@ To make adding translation easier a new format is supported:
                 }
             }
 
-Two methods are added to i18next:
+Tree methods are added to i18next:
 
-            i18next.addPhrase( key, [namespace,] langValue) 
-            i18next.addPhrases( [namespace,] keyLangValue )
+	i18next.addPhrase( key, [namespace,] langValue) 
+	i18next.addPhrases( [namespace,] keyLangValue )
+	i18next.loadPhrases( jsonFileName, onFail );
+
 Where 
 - `key` {string} can be a combined namespace:key string, and
 - `langValue` = `{ {lang: value}xN }`
 - `keyLangValue` = `{ key: {lang: value}xN }, key2: {lang: value}xN } }`
+- `jsonFileName` = the file name of a json-file with the format `nsKeyLangValue`
+- `nsKeyLangValue` = 
+
+		{ 
+			namespaceA: { 
+				key : {lang: value}xN }, 
+				key2: {lang: value}xN } 
+			},
+		  	namespaceB: { 
+				key3: {lang: value}xN }, 
+				key4: {lang: value}xN } 
+			}
+		}
+	
 
 #### Example
 

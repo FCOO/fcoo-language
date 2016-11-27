@@ -215,24 +215,29 @@
     };
         
     /***********************************************************************
-    TODO 
-    loadPhrases( jsonFileName );
+    i18next.loadPhrases( jsonFileName );
     namespaceKeyLangValue = 
         {   namespaceA: {
                 keyA: {
                     langA: "The text",
                     langB: "Tekst"
                 },
-                keyB: {
-                    ...
-                }
+                keyB: { ... }
             },
-            namespaceB :{
-                ...
-            }
+            namespaceB :{ ... }
         }
     ***********************************************************************/
-    
+    i18next.loadPhrases = function( jsonFileName, onFail ){
+        var jqxhr = $.getJSON( jsonFileName );
+        if (onFail)
+            jqxhr.fail( onFail );
+
+        jqxhr.done( function( data ) {
+            $.each( data, function( namespace, keyLangValue ) {
+                i18next.addPhrases( namespace, keyLangValue );
+            });
+        });
+    };
     
     /***********************************************************************
     sentence ( langValue, options )
@@ -328,13 +333,6 @@
         //Update all language related elements
         window.fcoo.settings.set('language', language );
     }); 
-
-//i18next.changeLanguage('da');
-i18next.addResource('da', 'temp', '_XX_', 'Dette er en test');
-console.log( i18next.t('temp:_XX_') );
-i18next.addResource('da', 'temp', '_XX_', 'Dette er en NY test');
-console.log( '#1', i18next.s({en:'ENGLISH', 'da':'DANISH'}) );
-console.log( '#2', i18next.s({'da':'DANISH2'}) );
 
 
 }(jQuery, this, document));
