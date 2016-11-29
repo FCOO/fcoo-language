@@ -52,7 +52,7 @@
                           standardLanguage;
 
     //The ?lang=... is removed. Is only used if no 'language' is set in fcoo.settings
-    window.Url.updateSearchParam('lang');
+    //TODO Include when IE9 is not supported:  window.Url.updateSearchParam('lang');
     
 
     /***********************************************************
