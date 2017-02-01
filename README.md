@@ -98,6 +98,7 @@ The following namespaces are recommended to use:
 
 
 ### Adding translation
+#### Default i18n structure
 Default 1-dim json-structure for i18next is 
 
             { langA: { 
@@ -113,6 +114,7 @@ Using the following methods to add translations
 	i18next.addResources(lng, ns, resources) //Adds multiple key/values. 
 
 
+#### Additional structure
 To make adding translation easier a new format is supported: 
 
             { namespace: {
@@ -156,7 +158,7 @@ Where
 
 ### Sentence
 Sometime a translation is so local that it do not need to be added as a key.
-Eq. in error-messages where the contents is specific to a given error
+E.g. in error-messages where the contents is specific to a given error
 
 In these cases a new method is added to i18next:
 
@@ -176,7 +178,7 @@ Where  `langValue = { {lang: value}xN }`
 `[KEY]` = Singular
 `[KEY]_plural` = Plural
 
-Translate with `optons={count:...}`
+Translate with `options={count:...}`
 
 #### Example
 
