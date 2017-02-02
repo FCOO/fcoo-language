@@ -239,6 +239,20 @@ To update the contents call `localize`
 
 See [jqueryI18next] for documentation
 
+#### New jQuery prototype methods
+To add or update the `data-i18n` properties of elements a new methods is defined
+
+    $.fn.i18n( key[, attribute][, options] )
+
+that set or update `data-i18n="[attribute]key` and `data-i18n-options="options stringified"`
+
+    $('<a href="#"></a>').i18n('car_interval', {count:5}); //<a href="#" data-i18n="car_interval" data-i18n-options="{'count':5}"/>
+
+    $('<a href="#"></a>).i18n('key.for.title', 'title'); // <a href="#" data-i18n="[title]key.for.title"></a>
+      
+
+
+
 ----------
 
 ##  [lang-flag-icon]

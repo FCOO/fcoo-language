@@ -9,7 +9,6 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
-  <link  href="bower_components.css" rel="stylesheet">	
   <link  href="../src/fcoo-language.css" rel="stylesheet">	
 	<style> 
 		div.big {
@@ -85,8 +84,12 @@
         //console.log(i18next.t("This is fallback value"));
     $(function() { 
         var li = $('<li>').prependTo( $('.nav') );
-        var a = $('<a href="#" data-i18n="nav:firstpage">').appendTo(li);
-        a.localize();        
+        $('<a href="#"/>')
+            .i18n('nav:position', {count:123})
+            .i18n('nav:firstpage', 'title')
+            .appendTo(li)
+            .localize();        
+
     
     }); 
 
