@@ -126,7 +126,7 @@ To make adding translation easier a new format is supported:
 
 Tree methods are added to i18next:
 
-	i18next.addPhrase( key, [namespace,] langValue) 
+	i18next.addPhrase( [namespace,] key, langValue) 
 	i18next.addPhrases( [namespace,] keyLangValue )
 	i18next.loadPhrases( jsonFileName, onFail );
 
