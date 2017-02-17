@@ -87,9 +87,12 @@
         $('<a href="#"/>')
             .i18n('nav:position', {count:123})
             .i18n('nav:firstpage', 'title')
-            .appendTo(li)
-            .localize();        
+            .appendTo(li);        
 
+        li = $('<li>').prependTo( $('.nav') );
+        $('<a href="#"/>')
+            .i18n({da:'i18n() På dansk', en:'i18n() In English'})
+            .appendTo(li);        
     
     }); 
 
