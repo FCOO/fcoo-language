@@ -319,9 +319,10 @@
     $.fn.i18n( htmlOrKeyOrPhrase[, attribute][, options] )
     Add/updates the "data-i18n" attribute
 
-    htmlOrKeyOrPhrase = simple html-string OR 
-                        i18next-key OR 
-                        a phrase-object (see langValue in i18next.addPhrase)
+    htmlOrKeyOrPhrase = simple html-string ( "This will always be in English" ) OR 
+                        i18next-key ( "myNS:myKey" ) OR 
+                        a phrase-object - see langValue in i18next.addPhrase ( {da:"Dette er en test", en:"This is a test"} ) OR
+                        a string representing a phrase-object ( '{"da":"Dette er en test", "en":"This is a test"}' )
     
     
     ***********************************************************/
@@ -342,6 +343,15 @@
                   case 'string': attribute = argument; break;
                 }
             }
+
+            var original = htmlOrKeyOrPhrase;
+            try {
+                htmlOrKeyOrPhrase = JSON.parse(htmlOrKeyOrPhrase);
+            }
+            catch (e) {
+                htmlOrKeyOrPhrase = original; 
+            }
+
 
             //Get the key or add a temp-phrase
             if (typeof htmlOrKeyOrPhrase == 'string')//{

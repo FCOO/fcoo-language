@@ -91,7 +91,8 @@
 
         li = $('<li>').prependTo( $('.nav') );
         $('<a href="#"/>')
-            .i18n({da:'i18n() På dansk', en:'i18n() In English'})
+//            .i18n({da:'i18n() På dansk', en:'i18n() In English'})
+            .i18n('{"da":"i18n() På dansk", "en":"i18n() In English"}')
             .appendTo(li);        
     
     }); 
