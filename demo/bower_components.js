@@ -10369,677 +10369,6 @@ return jQuery;
 
 }(this, document));
 ;
-"use strict";var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj};(function(f){if((typeof exports==="undefined"?"undefined":_typeof(exports))==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Url=f()}})(function(){var define,module,exports;return function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++){s(r[o])}return s}({1:[function(require,module,exports){window.addEventListener("popstate",function(e){Url.triggerPopStateCb(e)});var Url=module.exports={_onPopStateCbs:[],_isHash:false,queryString:function queryString(name,notDecoded){name=name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");var regex=new RegExp("[\\?&]"+name+"=([^&#]*)"),results=regex.exec(location.search),encoded=null;if(results===null){regex=new RegExp("[\\?&]"+name+"(\\&([^&#]*)|$)");if(regex.test(location.search)){return true}return undefined}else{encoded=results[1].replace(/\+/g," ");if(notDecoded){return encoded}return decodeURIComponent(encoded)}},parseQuery:function parseQuery(search){var query={};if(typeof search!=="string"){search=window.location.search}search=search.replace(/^\?/g,"");if(!search){return{}}var a=search.split("&"),i=0,iequ,value=null;for(;i<a.length;++i){iequ=a[i].indexOf("=");if(iequ<0){iequ=a[i].length;value=true}else{value=decodeURIComponent(a[i].slice(iequ+1))}query[decodeURIComponent(a[i].slice(0,iequ))]=value}return query},stringify:function stringify(queryObj){if(!queryObj||queryObj.constructor!==Object){throw new Error("Query object should be an object.")}var stringified="";Object.keys(queryObj).forEach(function(c){var value=queryObj[c];stringified+=c;if(value!==true){stringified+="="+encodeURIComponent(queryObj[c])}stringified+="&"});stringified=stringified.replace(/\&$/g,"");return stringified},updateSearchParam:function updateSearchParam(param,value,push,triggerPopState){var searchParsed=this.parseQuery();if(value===undefined){delete searchParsed[param]}else{if(searchParsed[param]===value){return Url}searchParsed[param]=value}var newSearch="?"+this.stringify(searchParsed);this._updateAll(window.location.pathname+newSearch+location.hash,push,triggerPopState);return Url},getLocation:function getLocation(){return window.location.pathname+window.location.search+window.location.hash},hash:function hash(newHash,triggerPopState){if(newHash===undefined){return location.hash.substring(1)}if(!triggerPopState){setTimeout(function(){Url._isHash=false},0);Url._isHash=true}return location.hash=newHash},_updateAll:function _updateAll(s,push,triggerPopState){window.history[push?"pushState":"replaceState"](null,"",s);if(triggerPopState){Url.triggerPopStateCb({})}return s},pathname:function pathname(_pathname,push,triggerPopState){if(_pathname===undefined){return location.pathname}return this._updateAll(_pathname+window.location.search+window.location.hash,push,triggerPopState)},triggerPopStateCb:function triggerPopStateCb(e){if(this._isHash){return}this._onPopStateCbs.forEach(function(c){c(e)})},onPopState:function onPopState(cb){this._onPopStateCbs.push(cb)},removeHash:function removeHash(){this._updateAll(window.location.pathname+window.location.search,false,false)},removeQuery:function removeQuery(){this._updateAll(window.location.pathname+window.location.hash,false,false)},version:"2.3.1"}},{}]},{},[1])(1)});
-;
-/****************************************************************************
-    url.js-extensions.js, 
-
-    (c) 2016, FCOO
-
-    https://github.com/FCOO/url.js-extensions
-    https://github.com/FCOO
-
-****************************************************************************/
-
-(function ($, window, document, undefined) {
-    "use strict";
-
-    //Workaround for event.newURL and event.oldURL
-    //let this snippet run before your hashchange event binding code
-    if (!window.HashChangeEvent)(
-        function(){
-            var lastURL= document.URL;
-            window.addEventListener("hashchange", function(event){
-                Object.defineProperty(event,"oldURL",{enumerable:true,configurable:true,value:lastURL});
-                Object.defineProperty(event,"newURL",{enumerable:true,configurable:true,value:document.URL});
-                lastURL = document.URL;
-            });
-        }()
-    );
-
-
-    //Overwrite Url._updateAll to handle Security Error in Safari on Mac that prevent more that 100 history updates in 30 sec
-    window.Url._updateAll = function(s, push, triggerPopState) {
-        try {
-            window.history[push ? "pushState" : "replaceState"](null, "", s);          
-        }
-        catch (e) {
-            //Use 'old' methods - perhaps it will reload the page 
-            window.location.replace( s );
-        }
-        
-        if (triggerPopState) {
-            window.Url.triggerPopStateCb({});
-        }
-        return s;
-    };
-
-
-    /******************************************
-    anyString(name, notDecoded, search, sep)
-    Copy of Url.queryString with optional input string (search) 
-    and separaator (sep)
-    ******************************************/
-    function anyString(name, notDecoded, search, sep){
-        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-
-        var regex = new RegExp("[\\"+sep+"&]" + name + "=([^&#]*)")
-          , results = regex.exec(search)
-          , encoded = null
-          ;
-
-        if (results === null) {
-            regex = new RegExp("[\\"+sep+"&]" + name + "(\\&([^&#]*)|$)");
-            if (regex.test(search)) {
-                return true;
-            }
-            return undefined;
-        } else {
-            encoded = results[1].replace(/\+/g, " ");
-            if (notDecoded) {
-                return encoded;
-            }
-            return decodeURIComponent(encoded);
-        }
-    }
-
-
-    /******************************************
-    _correctSearchOrHash
-    Check and correct search or hash = ID_VALUE[&ID_VALUE]
-        ID_VALUE = 
-            ID or
-            ID=VALUE or
-            ID=VALUE,VALUE2,...,VALUEN
-        VALUE contains only a-z 0-9 - _ SPACE
-        ID contains only a-z 0-9 - _
-    *******************************************/
-    function _correctSearchOrHash( str, preChar ){
-        function decodeStr( str ){
-            try {
-                decodeURIComponent( str ); 
-                return decodeURIComponent( str ); 
-            }
-            catch(err) { 
-                return undefined;
-            }
-        }
-
-        //Chack and correct the parameter and/or hash-tag
-        var strList,
-            result = '',
-            idRegEx = new RegExp(/[\w\-_]+/),
-            idValues, id, values, value, oneValueOk, i, j;
-
-        //Convert to char
-        str = str.replace(/%3D/g, '=');
-        str = str.replace(/%2C/g, ',');
-        str = str.replace(/%3F/g, '?');
-        str = str.replace(/%23/g, '#');
-        str = str.replace(/%7B/g, '{');
-        str = str.replace(/%7D/g, '}');
-        str = str.replace(/%2B/g, '+');
-        str = str.replace(/%22/g, '"');
-        str = str.replace(/%3A/g, ':');
-
-        //Remove pre-char
-        while (preChar && str.length && (str.charAt(0) == preChar) )
-            str = str.slice(1);
-
-        strList = str.split('&'); 
-
-        for (i=0; i<strList.length; i++ ){
-            idValues = strList[i].split('=');
-            id = decodeStr( idValues[0] );
-            values = idValues[1] || undefined; 
-            oneValueOk = false;
-            if ( id && (idRegEx.exec(id) == id ) ){
-                //Correct id
-                if (values === undefined){
-                    oneValueOk = true;
-                    valueList = [];
-                }
-                else {
-                    //Check syntax of values
-                    var valueList = values.split(',');
-                    for (j=0; j<valueList.length; j++ ){
-                        value = decodeStr( valueList[j] );
-                        if ( value ){
-                            if (value == 'undefined')
-                              valueList[j] = 'false';
-                            oneValueOk = true;
-                        }
-                        else
-                            valueList[j] = undefined;
-                    }
-                }
-                if ( oneValueOk ){
-                    result += (result ? '&' : '') + id;
-                    var firstValue = true;
-                    for (j=0; j<valueList.length; j++ ){
-                        value = valueList[j];
-                        result += (firstValue ? '=' : ',') + (value ? value : ''); 
-                        firstValue = false;
-                    }
-                }
-            } //end of correct id
-        }
-        return decodeURIComponent(result);
-    }
-
-
-    /******************************************
-    adjustUrl
-    Check and correct the url
-    *******************************************/
-    function adjustUrl(){ 
-        var oldSearch = window.location.search,
-            newSearch = this._correctSearchOrHash( oldSearch, '?' ),
-            oldHash   = window.location.hash,
-            newHash   = this._correctSearchOrHash( oldHash, '#' ),
-            newUrl    = window.location.pathname +  
-                          (newSearch ? '?' + encodeURI(newSearch) : '') + 
-                          (newHash   ? '#' + encodeURI(newHash)   : '');
-
-        this._updateAll( newUrl );          
-        return newUrl;
-    }
-
-    /******************************************
-    onHashchange( handler [, context])
-    Add handler = function( event) to the event "hashchange"
-    Can by omitted if the hash-tag is updated using 
-    Url.updateHashParam(..) or Url.updateHash(..)
-    *******************************************/
-    function onHashchange( handler, context ){
-        this.hashchange = this.hashchange || [];
-        this.hashchange.push( $.proxy(handler, context) );
-    }
-   
-    /******************************************
-    hashString
-    Same as queryString but for the hash
-    It is a adjusted copy of queryString
-    *******************************************/
-    function hashString(name, notDecoded){
-        return anyString(name, notDecoded, window.location.hash, '#');
-    }
-    
-    /******************************************
-    parseHash
-    Same as parseQuery but for the hash
-    *******************************************/
-    function parseHash(){
-        return this.parseQuery( this.hash() );    
-    }
-
-    /******************************************
-    updateHash(hashObj, dontCallHashChange)
-    Update hash-tag with the id-value in hashObj
-    If dontCallHashChange==true the hashchange-event-functions 
-    added with Url.onHashchange( function[, context]) will not be called
-    *******************************************/
-    function updateHash(hashObj, dontCallHashChange){
-        this.dontCallHashChange = dontCallHashChange;
-        var newHash = this.stringify( $.extend({}, this.parseHash(), hashObj || {}) );
-
-        //return window.location.hash = '#'+newHash;
-        return this._updateAll(window.location.pathname + window.location.search + '#' + newHash, false);
-    }
-     
-    /******************************************
-    updateHashParam
-    Adds, updates or deletes a hash-tag
-    If dontCallHashChange==true the hashchange-event-functions 
-    added with Url.onHashchange( function[, context]) will not be called
-    *******************************************/
-    function updateHashParam(hashParam, value, dontCallHashChange){
-        var hashParsed = this.parseHash();
-        if (value === undefined){
-            delete hashParsed[hashParam];
-        }
-        else {
-            if (hashParsed[hashParam] === value)
-                return this;
-            hashParsed[hashParam] = value;
-        }
-        this.dontCallHashChange = dontCallHashChange;
-
-        //return window.location.hash = this.stringify(hashParsed);
-        return this._updateAll(window.location.pathname + window.location.search + '#' + this.stringify(hashParsed), false);
-
-    }
-
-
-    /******************************************
-    validateValue
-    Validate value using validator
-    validator = regExp | function( value ) | array of validator
-    *******************************************/
-    function validateJSONValue( value ){
-        try {
-            var jsonObj = JSON.parse( value );
-            if ($.type( jsonObj ) == 'object')
-                return true;
-        }
-        catch (e) { 
-            return false;
-        }
-        return false;
-    }
-
-    function validateValue( value, validator ){
-        //Convert Boolean into String
-        if ($.type( value ) === "boolean")
-            value = value ? 'true' : 'false';  
-        value = value || '';
-
-        if (validator === undefined)
-            return true;
-
-        if ( $.isFunction(validator) )
-          return !!validator( value );
-
-        if ( $.isArray(validator) ){
-            var result = true;
-            $.each( validator, function( index, _validator ){
-                if ( !validateValue( value, _validator) ){
-                    result = false;
-                    return false;
-                }
-            });
-            return result;
-        }
-        switch (validator){
-            case 'BOOLEAN' : validator = /true|false/;           break;
-            case 'NUMBER'  : validator = /[-+]?[0-9]*\.?[0-9]+/; break;
-            case 'NOTEMPTY': validator = /.+/;                   break;
-
-            //Special case for json-object-string
-            case 'JSON'    : return validateValue( value, validateJSONValue); 
-        }
-
-        var regExp = new RegExp(validator),
-            execResult = regExp.exec(value); 
-        return !!(execResult && (execResult.length == 1) && (execResult[0] == value));
-    }
-
-
-    /******************************************
-    _parseObject( obj, validatorObj, defaultObj, options )
-    Parse obj after it is validated and converted acording to
-    validatorObj, defaultObj, and options
-
-    validatorObj: object with {id: validator,..}. Failed values are removed 
-    defaultObj  : object with {id: value}. Values to be used if `id` is missing or fails validation 
-    options: {
-        convertBoolean: Boolean (default = true ) If true all values == "true" or "false" are converted into Boolean
-        convertNumber : Boolean (default = true ) If true all values representing a number is converted to float
-        convertJSON   : Boolean (default = true ) If true all values representing a stringify json-object is converted to a real json-object
-        queryOverHash : Boolean (default = true ) If true and the same id is given in both query-string and hash-tag the value from query-string is returned. 
-                                                  If false the value from hash-tag is returned
-    }
-    *******************************************/
-    function _parseObject( obj, validatorObj, defaultObj, options ){
-        validatorObj = validatorObj || {}; 
-        defaultObj = defaultObj || {}; 
-        options = $.extend( {}, options, { 
-            convertBoolean: true, 
-            convertNumber : true, 
-            convertJSON   : true,
-            queryOverHash : true 
-        }); 
-        
-        var _this = this;
-
-        //Validate all values
-        $.each( obj, function( id, value ){
-            //Convert '+' to space
-            if ( $.type(value) == 'string' )
-                value = value.replace(/\+/g, " ");
-            
-            //Validate value
-            if ( !_this.validateValue( value, validatorObj[id] ) )
-                value = undefined; 
-
-            //Convert "true" and false" to Boolean
-            if ( options.convertBoolean && ( (value == 'true') || (value == 'false') ) )
-              value = (value == 'true');
-                
-            //Convert String to Float
-            if (options.convertNumber && _this.validateValue( value, 'NUMBER') ){
-                value = parseFloat( value );
-            }
-                
-            //Remove deleted keys
-            if (value === undefined)
-                delete obj[id];
-            else
-                obj[id] = value;
-        });
-
-        //Convert String to json-object
-        if (options.convertJSON)
-            $.each( obj, function( id, value ){
-                if ( _this.validateValue( value, 'JSON') )
-                    obj[id] = JSON.parse( value );
-            });        
-        
-        //Insert default values
-        $.each( defaultObj, function( id, value ){
-            if (obj[id] === undefined)
-              obj[id] = value;
-        });
-
-        return obj;
-    }
-
-    /******************************************
-    parseAll( validatorObj, defaultObj, options )
-    Parse the combined query-string and hash-tags
-    Returns a object with `id: value` for both query-string and hash-tags
-    validatorObj, defaultObj, options: See _parseObject
-    *******************************************/
-    function parseAll( validatorObj, defaultObj, options ){
-        var _this = this,
-            queryOverHash = options ? !!options.queryOverHash : true;
-
-        function parseObj( str ){ 
-            var obj = _this.parseQuery( str );
-
-            //Use anyString(..) to get adjusted value
-            $.each( obj, function( id/*, value*/ ){
-                obj[id] = anyString(id, false, '?'+str, '?');
-            });
-
-            return _this._parseObject( obj, validatorObj, defaultObj, options ); 
-        }
-
-        var queryObj = parseObj( this._correctSearchOrHash( window.location.search, '?' ) ),
-            hashObj  = parseObj( this._correctSearchOrHash( window.location.hash,   '#' ) );
-
-        return $.extend( queryOverHash ? hashObj  : queryObj, 
-                         queryOverHash ? queryObj : hashObj   ); 
-    }
-
-    /******************************************
-    onHashChange()
-    ******************************************/
-    function onHashChange( event ){
-        //Adjust the hash-tag
-        var oldHash = window.location.hash,
-            newHash = this._correctSearchOrHash( oldHash, '#' );
-
-        if ( decodeURIComponent(oldHash.substring(1)) != decodeURIComponent(newHash) ){
-          window.location.hash = newHash; //Will trig a new call of onHashChange
-        }
-        else {
-            if (this.dontCallHashChange){
-                this.dontCallHashChange = false;
-                return;
-            }
-            //Fire the events added with Url.onHashchange
-            this.hashchange = this.hashchange || [];
-            for (var i=0; i<this.hashchange.length; i++ )
-                this.hashchange[i]( event );
-        }
-    }
-
-    /******************************************
-    //Extend window.Url with the new methods
-    ******************************************/
-    $.extend( window.Url, {
-        _correctSearchOrHash: _correctSearchOrHash,
-        adjustUrl           : adjustUrl,
-        onHashchange        : onHashchange,
-        hashString          : hashString,
-        parseHash           : parseHash,
-        updateHash          : updateHash,
-        updateHashParam     : updateHashParam,
-        validateValue       : validateValue,
-        _parseObject        : _parseObject,
-        parseAll            : parseAll,
-        onHashChange        : onHashChange
-    });
-
-    //Add the 'global' hashchange-event-methods
-    window.addEventListener("hashchange", $.proxy( onHashChange, window.Url ), false);
-
-
-
-    /******************************************
-    Initialize/ready 
-    *******************************************/
-    $(function() { 
-        window.Url.adjustUrl();
-    }); 
-    //******************************************
-
-
-
-}(jQuery, this, document));
-
-/******************************************
-Variables in window.location making up the full url
-    
-var newURL = window.location.protocol + "//" + window.location.host + "/" + window.location.pathname + window.location.search + window.location.hash;
-
-window.location.protocol
-window.location.host
-window.location.pathname
-window.location.search 
-window.location.hash 
-
-******************************************/
-
-;
-/****************************************************************************
-    fcoo-settings.js, 
-
-    (c) 2016, FCOO
-
-    https://github.com/FCOO/fcoo-settings
-    https://github.com/FCOO
-
-****************************************************************************/
-
-(function ($, window, document, undefined) {
-    "use strict";
-    
-    //Create fcoo.settings-namespace
-    window.fcoo = window.fcoo || {};
-    var ns = window.fcoo.settings = window.fcoo.settings || {};
-
-    var settings       = {},
-        loadedValues   = {},
-        queryValues    = {}, //values set in the url
-        storageIdSave  = 'fcoo_settings',
-        storageIdForce = 'fcoo_settings_FORCE';
-
-        //Get query settings            
-        try { 
-            queryValues = JSON.parse( window.Url.queryString('settings') ); 
-        }
-        catch (e) { 
-            queryValues = {}; 
-        }
-
-    /**********************************
-    Setting( options )
-    options = {id, validator, applyFunc, defaultValue, globalEvents )
-    id [String]
-    validator [null] | [String] | [function( value)]. If [String] => using Url.js-extensions validation
-    applyFunc [function( value, id, defaultValue )] function to apply the settings for id
-    defaultValue 
-    globalEvents {String} = Id of global-events in fcoo.events that aare fired when the setting is changed
-    onError [function( value, id )] (optional). Called if a new value is invalid according to validator
-    **********************************/
-    function Setting( options ) {
-        this.options = options;
-        this.options.applyFunc = options.applyFunc || function(){};
-        this.value = null;
-        this.saveValue = null;
-        if ((this.options.defaultValue === undefined) && (typeof this.options.validator == 'string') )
-            //Try to set default value based on the validator
-            switch (this.options.validator){
-                case 'BOOLEAN': this.options.defaultValue = false;  break;
-                case 'NUMBER' : this.options.defaultValue = 0;      break;
-            }
-    }
-
-    ns.Setting = Setting;
-
-    //Extend the prototype
-    ns.Setting.prototype = {
-        apply:  function ( newValue, dontCallApplyFunc ){ 
-                    var id = this.options.id;
-                    newValue = (newValue === undefined) ? this.options.defaultValue : newValue;
-
-                    if ( !window.Url.validateValue(''+newValue, this.options.validator) ){ 
-                        if (this.options.onError)
-                            this.options.onError( newValue, id );
-                        newValue = this.options.defaultValue;
-                    }
-                    
-                    this.value = newValue;
-
-                    //Set saveValue = newValue unless it is the value from query-string
-                    if ((queryValues[id] === null) || (newValue != queryValues[id]))
-                        this.saveValue = newValue;
-                    queryValues[id] = null;
-
-                    if (!dontCallApplyFunc)
-                        this.options.applyFunc( this.value, id, this.options.defaultValue );
-
-                    //Fire global-events (if any)
-                    if (this.options.globalEvents && window.fcoo.events && window.fcoo.events.fire)
-                        window.fcoo.events.fire( this.options.globalEvents, id, this.value );
-
-                }    
-    };    
-
-    /**********************************
-    add( options )
-    options = {id, validator, applyFunc, defaultValue, globalEvents )
-    id [String]
-    validator [null] | [String] | [function( value)]. If [String] = 
-    defaultValue 
-    **********************************/
-    ns.add = function( options ){
-        options = $.extend( {}, { callApply: true }, options );
-        var setting = new ns.Setting( options );
-        settings[options.id] = setting;
-        setting.apply( loadedValues[setting.options.id], !options.callApply );                       
-    };
-    
-    /**********************************
-    set( id, value, reload )
-    id [String]
-    value [any]
-    reload [Boolean] 
-    **********************************/
-    ns.set = function( id, value, reload ){
-        var setting = settings[id];
-        if (!setting)
-          return false;
-
-        //Use saved value if 'value' isn't given
-        value = value === undefined ? this.get( id ) : value;
-        setting.apply( value, reload );
-        this.save( reload );
-
-        if (reload)
-          window.location.reload();
-    };
-    
-    /**********************************
-    get( id )
-    id [String]
-    **********************************/
-    ns.get = function( id ){
-        var setting = settings[id];
-        return setting ? setting.value : undefined;
-    };
-
-    /**********************************
-    loadFromLocalStorage()
-    Load the settings from localStorage 'fcoo-settings'
-    **********************************/
-    ns.loadFromLocalStorage = function(){
-        return JSON.parse( window.localStorage.getItem( storageIdSave ) || '{}' );
-    };
-
-    /**********************************
-    load()
-    Load the settings from
-        1) sessionStorage 'fcoo-settings-FORCE', or
-        2) Load settings from
-            a: url param 'settings
-            b: localStorage 'fcoo-settings'
-            c: default values
-    **********************************/
-    ns.load = function(){
-        //1) Try loading from storageIdForce 
-        var str = window.sessionStorage.getItem( storageIdForce );
-        if (str){
-            window.sessionStorage.removeItem( storageIdForce );
-            loadedValues = JSON.parse( str );
-        }
-        else {
-            //2) Load settings from...
-            //a: url param 'settings = queryValues
-
-            //b: localStorage 'fcoo-settings', 
-            var savedValues = this.loadFromLocalStorage();
-
-            //c: default values - is set by fcoo.settings.add(...)
-
-            //Combine the new settings
-            loadedValues =  $.extend( {}, savedValues, queryValues );
-        }
-
-        $.each( settings, function( id, setting ){ 
-            setting.apply( loadedValues[id] ); 
-        });
-    };
-    
-    /**********************************
-    save( toForce, saveStr )
-    Save the settings in 
-    toForce == false: localStorage 'fcoo-settings'
-    toForce == true : sessionStorage 'fcoo-settings-FORCE'
-
-    saveStr (special case) the string to be saved and only when toForce==true
-    **********************************/
-    ns.save = function( toForce, saveStr ){ 
-        //Save all saveValue from settings
-        var settingValuesToSave = this.loadFromLocalStorage();
-        $.each( settings, function( id, setting ){ 
-            if (setting.saveValue)
-                settingValuesToSave[ setting.options.id ] = setting.saveValue;
-        });
-
-        if (toForce){
-            //Save all settings to sessionStorage 'fcoo-settings-FORCE'
-            window.sessionStorage.setItem( storageIdForce, saveStr || JSON.stringify( settingValuesToSave ) );
-        }
-        else {
-            window.localStorage.setItem( storageIdSave, JSON.stringify( settingValuesToSave ) );
-        }
-    };
-
-
-    //Load the settings
-    ns.load();
-
-    /******************************************
-    Initialize/ready 
-    *******************************************/
-//    $(function() { 
-//    }); 
-
-}(jQuery, this, document));
-;
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -12202,58 +11531,40 @@ var PluralResolver = function () {
     var rule = this.getRule(code);
 
     if (rule) {
-      var _ret = function () {
-        if (rule.numbers.length === 1) return {
-            v: ''
-          }; // only singular
+      if (rule.numbers.length === 1) return ''; // only singular
 
-        var idx = rule.noAbs ? rule.plurals(count) : rule.plurals(Math.abs(count));
-        var suffix = rule.numbers[idx];
+      var idx = rule.noAbs ? rule.plurals(count) : rule.plurals(Math.abs(count));
+      var suffix = rule.numbers[idx];
 
-        // special treatment for lngs only having singular and plural
-        if (rule.numbers.length === 2 && rule.numbers[0] === 1) {
-          if (suffix === 2) {
-            suffix = 'plural';
-          } else if (suffix === 1) {
-            suffix = '';
-          }
+      // special treatment for lngs only having singular and plural
+      if (rule.numbers.length === 2 && rule.numbers[0] === 1) {
+        if (suffix === 2) {
+          suffix = 'plural';
+        } else if (suffix === 1) {
+          suffix = '';
         }
+      }
 
-        var returnSuffix = function returnSuffix() {
-          return _this.options.prepend && suffix.toString() ? _this.options.prepend + suffix.toString() : suffix.toString();
-        };
+      var returnSuffix = function returnSuffix() {
+        return _this.options.prepend && suffix.toString() ? _this.options.prepend + suffix.toString() : suffix.toString();
+      };
 
-        // COMPATIBILITY JSON
-        // v1
-        if (_this.options.compatibilityJSON === 'v1') {
-          if (suffix === 1) return {
-              v: ''
-            };
-          if (typeof suffix === 'number') return {
-              v: '_plural_' + suffix.toString()
-            };
-          return {
-            v: returnSuffix()
-          };
+      // COMPATIBILITY JSON
+      // v1
+      if (this.options.compatibilityJSON === 'v1') {
+        if (suffix === 1) return '';
+        if (typeof suffix === 'number') return '_plural_' + suffix.toString();
+        return returnSuffix();
+      }
+      // v2
+      else if (this.options.compatibilityJSON === 'v2' || rule.numbers.length === 2 && rule.numbers[0] === 1) {
+          return returnSuffix();
         }
-        // v2
-        else if (_this.options.compatibilityJSON === 'v2' || rule.numbers.length === 2 && rule.numbers[0] === 1) {
-            return {
-              v: returnSuffix()
-            };
+        // v3 - gettext index
+        else if (rule.numbers.length === 2 && rule.numbers[0] === 1) {
+            return returnSuffix();
           }
-          // v3 - gettext index
-          else if (rule.numbers.length === 2 && rule.numbers[0] === 1) {
-              return {
-                v: returnSuffix()
-              };
-            }
-        return {
-          v: _this.options.prepend && idx.toString() ? _this.options.prepend + idx.toString() : idx.toString()
-        };
-      }();
-
-      if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+      return this.options.prepend && idx.toString() ? this.options.prepend + idx.toString() : idx.toString();
     } else {
       this.logger.warn('no plural rule found for: ' + code);
       return '';
@@ -12292,7 +11603,8 @@ var Interpolator = function () {
 
     this.prefix = iOpts.prefix ? regexEscape(iOpts.prefix) : iOpts.prefixEscaped || '{{';
     this.suffix = iOpts.suffix ? regexEscape(iOpts.suffix) : iOpts.suffixEscaped || '}}';
-    this.formatSeparator = iOpts.formatSeparator ? regexEscape(iOpts.formatSeparator) : iOpts.formatSeparator || ',';
+
+    this.formatSeparator = iOpts.formatSeparator ? iOpts.formatSeparator : iOpts.formatSeparator || ',';
 
     this.unescapePrefix = iOpts.unescapeSuffix ? '' : iOpts.unescapePrefix || '-';
     this.unescapeSuffix = this.unescapePrefix ? '' : iOpts.unescapeSuffix || '';
@@ -12592,29 +11904,27 @@ var Connector = function (_EventEmitter) {
 
     // load one by one
     else {
-        (function () {
-          var readOne = function readOne(name) {
-            var _this6 = this;
+        var readOne = function readOne(name) {
+          var _this6 = this;
 
-            var _name$split5 = name.split('|'),
-                _name$split6 = slicedToArray(_name$split5, 2),
-                lng = _name$split6[0],
-                ns = _name$split6[1];
+          var _name$split5 = name.split('|'),
+              _name$split6 = slicedToArray(_name$split5, 2),
+              lng = _name$split6[0],
+              ns = _name$split6[1];
 
-            this.read(lng, ns, 'read', null, null, function (err, data) {
-              if (err) _this6.logger.warn('loading namespace ' + ns + ' for language ' + lng + ' failed', err);
-              if (!err && data) _this6.logger.log('loaded namespace ' + ns + ' for language ' + lng, data);
+          this.read(lng, ns, 'read', null, null, function (err, data) {
+            if (err) _this6.logger.warn('loading namespace ' + ns + ' for language ' + lng + ' failed', err);
+            if (!err && data) _this6.logger.log('loaded namespace ' + ns + ' for language ' + lng, data);
 
-              _this6.loaded(name, err, data);
-            });
-          };
-
-          
-
-          toLoad.toLoad.forEach(function (name) {
-            readOne.call(_this5, name);
+            _this6.loaded(name, err, data);
           });
-        })();
+        };
+
+        
+
+        toLoad.toLoad.forEach(function (name) {
+          readOne.call(_this5, name);
+        });
       }
   };
 
@@ -12652,31 +11962,29 @@ var Connector = function (_EventEmitter) {
 
     // load one by one
     else {
-        (function () {
-          var readOne = function readOne(name) {
-            var _this8 = this;
+        var readOne = function readOne(name) {
+          var _this8 = this;
 
-            var _name$split7 = name.split('|'),
-                _name$split8 = slicedToArray(_name$split7, 2),
-                lng = _name$split8[0],
-                ns = _name$split8[1];
+          var _name$split7 = name.split('|'),
+              _name$split8 = slicedToArray(_name$split7, 2),
+              lng = _name$split8[0],
+              ns = _name$split8[1];
 
-            this.read(lng, ns, 'read', null, null, function (err, data) {
-              if (err) _this8.logger.warn('reloading namespace ' + ns + ' for language ' + lng + ' failed', err);
-              if (!err && data) _this8.logger.log('reloaded namespace ' + ns + ' for language ' + lng, data);
+          this.read(lng, ns, 'read', null, null, function (err, data) {
+            if (err) _this8.logger.warn('reloading namespace ' + ns + ' for language ' + lng + ' failed', err);
+            if (!err && data) _this8.logger.log('reloaded namespace ' + ns + ' for language ' + lng, data);
 
-              _this8.loaded(name, err, data);
-            });
-          };
-
-          
-
-          languages.forEach(function (l) {
-            namespaces.forEach(function (n) {
-              readOne.call(_this7, l + '|' + n);
-            });
+            _this8.loaded(name, err, data);
           });
-        })();
+        };
+
+        
+
+        languages.forEach(function (l) {
+          namespaces.forEach(function (n) {
+            readOne.call(_this7, l + '|' + n);
+          });
+        });
       }
   };
 
@@ -12962,35 +12270,29 @@ var I18n = function (_EventEmitter) {
     var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : noop;
 
     if (!this.options.resources) {
-      var _ret = function () {
-        if (_this3.language && _this3.language.toLowerCase() === 'cimode') return {
-            v: callback()
-          }; // avoid loading resources for cimode
+      if (this.language && this.language.toLowerCase() === 'cimode') return callback(); // avoid loading resources for cimode
 
-        var toLoad = [];
+      var toLoad = [];
 
-        var append = function append(lng) {
-          if (!lng) return;
-          var lngs = _this3.services.languageUtils.toResolveHierarchy(lng);
-          lngs.forEach(function (l) {
-            if (toLoad.indexOf(l) < 0) toLoad.push(l);
-          });
-        };
-
-        append(_this3.language);
-
-        if (_this3.options.preload) {
-          _this3.options.preload.forEach(function (l) {
-            append(l);
-          });
-        }
-
-        _this3.services.cacheConnector.load(toLoad, _this3.options.ns, function () {
-          _this3.services.backendConnector.load(toLoad, _this3.options.ns, callback);
+      var append = function append(lng) {
+        if (!lng) return;
+        var lngs = _this3.services.languageUtils.toResolveHierarchy(lng);
+        lngs.forEach(function (l) {
+          if (toLoad.indexOf(l) < 0) toLoad.push(l);
         });
-      }();
+      };
 
-      if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+      append(this.language);
+
+      if (this.options.preload) {
+        this.options.preload.forEach(function (l) {
+          append(l);
+        });
+      }
+
+      this.services.cacheConnector.load(toLoad, this.options.ns, function () {
+        _this3.services.backendConnector.load(toLoad, _this3.options.ns, callback);
+      });
     } else {
       callback(null);
     }
@@ -13170,91 +12472,6 @@ return i18next;
 })));
 
 ;
-(function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global.i18nextIntervalPluralPostProcessor = factory());
-}(this, (function () { 'use strict';
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
-
-function intervalMatches(interval, count) {
-  if (interval.indexOf('-') > -1) {
-    var p = interval.split('-');
-    if (p[1] === 'inf') {
-      var from = parseInt(p[0], 10);
-      return count >= from;
-    } else {
-      var _from = parseInt(p[0], 10);
-      var to = parseInt(p[1], 10);
-      return count >= _from && count <= to;
-    }
-  } else {
-    var match = parseInt(interval, 10);
-    return match === count;
-  }
-}
-
-var index = {
-  name: 'interval',
-  type: 'postProcessor',
-
-  options: {
-    intervalSeparator: ';',
-    intervalRegex: /^\((\S*)\){(.*)}$/,
-    intervalSuffix: '_interval'
-  },
-
-  setOptions: function setOptions(options) {
-    this.options = _extends({}, this.options, options);
-  },
-  process: function process(value, key, options, translator) {
-    var _this = this;
-
-    var p = value.split(this.options.intervalSeparator);
-
-    var found = void 0;
-    p.forEach(function (iv) {
-      if (found) return;
-      var match = _this.options.intervalRegex.exec(iv);
-
-      if (match && intervalMatches(match[1], options.count || 0)) {
-        found = match[2];
-      }
-    });
-
-    // not found fallback to classical plural
-    if (!found) {
-      var newOptions = _extends({}, options);
-      if (typeof newOptions.postProcess === 'string') {
-        delete newOptions.postProcess;
-      } else {
-        var index = newOptions.postProcess.indexOf('interval'); // <-- Not supported in <IE9
-        if (index !== -1) newOptions.postProcess.splice(index, 1);
-      }
-      found = translator.translate(key.replace(this.options.intervalSuffix, ''), newOptions);
-    }
-
-    return found || value;
-  }
-};
-
-return index;
-
-})));
-;
 /****************************************************************************
     i18next-phrases.js, 
 
@@ -13389,16 +12606,18 @@ return index;
     };
 
     /***********************************************************************
-    i18next.loadPhrases( jsonFileName );
+    i18next.loadPhrases( jsonFileName, callback );
     ***********************************************************************/
-    i18next.loadPhrases = function( jsonFileName, onFail ){
+    i18next.loadPhrases = function( jsonFileName, callback ){
         var jqxhr = $.getJSON( jsonFileName ),
             _this = this;
-        if (onFail)
-            jqxhr.fail( onFail );
+        if (callback)
+            jqxhr.fail( callback );
 
         jqxhr.done( function( data ) {
             _this.addBundlePhrases( data );
+            if (callback)
+              callback( null );
         });
     };
     
@@ -13446,17 +12665,19 @@ return index;
     };
 
     /***********************************************************************
-    i18next.loadKeyPhrases = function( jsonFileName, onFail )
+    i18next.loadKeyPhrases = function( jsonFileName, callback )
     ***********************************************************************/
-    i18next.loadKeyPhrases = function( jsonFileName, onFail ){
+    i18next.loadKeyPhrases = function( jsonFileName, callback ){
         var jqxhr = $.getJSON( jsonFileName );
-        if (onFail)
-            jqxhr.fail( onFail );
+        if (callback)
+            jqxhr.fail( callback );
 
         jqxhr.done( function( data ) {
             $.each( data, function( namespace, keyLangValues ) {
                 i18next.addKeyPhrases( namespace, keyLangValues );
             });
+            if (callback)
+              callback( null );
         });
     
     };
@@ -13660,7 +12881,7 @@ return index;
             targetAttr    : jQuery_i18n_targetAttr,     // data-() attribute to grab target element to translate (if diffrent then itself)
             optionsAttr   : jQuery_i18n_optionsAttr,    // data-() attribute that contains options, will load/set if useOptionsAttr = true
             useOptionsAttr: true,                       // see optionsAttr
-            parseDefaultValueFromContent: true          // parses default values from content ele.val or ele.text
+            parseDefaultValueFromContent: false         // parses default values from content ele.val or ele.text
         }
     );
 
@@ -13682,7 +12903,7 @@ return index;
         var options = null, 
             attribute = '', 
             argument,
-            isKey = true,
+            keyFound = true, 
             key = htmlOrKeyOrPhrase;
 
         for (var i=1; i<arguments.length; i++ ){
@@ -13703,7 +12924,7 @@ return index;
 
         //Get the key or add a temp-phrase
         if (typeof htmlOrKeyOrPhrase == 'string')//{
-            isKey = !!(window.i18next.t( htmlOrKeyOrPhrase, {defaultValue:''} ));
+            keyFound = window.i18next.exists(htmlOrKeyOrPhrase);
         else {
             //It is a {da:'...', en:'...', de:'...'} object
             key = 'jqueryfni18n' + tempKeyId++;
@@ -13711,48 +12932,993 @@ return index;
             key = tempNS+':'+key;
         }    
 
-        if (isKey)
-            return this.each(function() {
-                var $this = $(this),
-                    oldData = $this.attr( jQuery_i18n_selectorAttr ),
-                    newData = [],
-                    oldStr,
-                    newStr = attribute ? '[' + attribute + ']' + key : key,
-                    keep;
-                oldData = oldData ? oldData.split(';') : [];
+        return this.each(function() {
+            var $this = $(this),
+                oldData = $this.attr( jQuery_i18n_selectorAttr ),
+                newData = [],
+                oldStr,
+                newStr = attribute ? '[' + attribute + ']' + key : key,
+                keep;
+            oldData = oldData ? oldData.split(';') : [];
             
-                for (var i=0; i<oldData.length; i++ ){
-                    oldStr = oldData[i];
-                    keep = true;
-                    //if the new key has an attribute => remove data with '[attribute]'
-                    if (attribute && (oldStr.indexOf('[' + attribute + ']') == 0))
-                        keep = false;                      
-                    //if the new key don't has a attribute => only keep other attributes
-                    if (!attribute && (oldStr.indexOf('[') == -1)) 
-                        keep = false;
-                    if (keep)
-                        newData.push( oldStr );
-                }
-                newData.push( newStr);                                
+            for (var i=0; i<oldData.length; i++ ){
+                oldStr = oldData[i];
+                keep = true;
+                //if the new key has an attribute => remove data with '[attribute]'
+                if (attribute && (oldStr.indexOf('[' + attribute + ']') == 0))
+                    keep = false;                      
+                //if the new key don't has a attribute => only keep other attributes
+                if (!attribute && (oldStr.indexOf('[') == -1)) 
+                    keep = false;
+                if (keep)
+                    newData.push( oldStr );
+            }
+            newData.push( newStr);                                
 
-                //Set data-i18n
-                $this.attr( jQuery_i18n_selectorAttr, newData.join(';') );
+            //Set data-i18n
+            $this.attr( jQuery_i18n_selectorAttr, newData.join(';') );
 
-                //Set data-i18n-options
-                if (options)
-                    $this.attr( 'data-' + jQuery_i18n_optionsAttr, JSON.stringify( options ) );
+            //Set data-i18n-options
+            if (options)
+                $this.attr( 'data-' + jQuery_i18n_optionsAttr, JSON.stringify( options ) );
 
+            if (keyFound)
                 //Update contents
                 $this.localize();        
-            });
-        else
-            //Not a key => simple add htmlOrKeyOrPhrase as html
-            return this.each(function() {
-                $(this).html( htmlOrKeyOrPhrase );
-            });
+            else {
+                //Not (yet) a key => simple add htmlOrKeyOrPhrase as html or attr
+                if (attribute)
+                    $(this).attr( attribute, htmlOrKeyOrPhrase );
+                else
+                    $(this).html( htmlOrKeyOrPhrase );
+            }
+        });
     };
 
 }(jQuery, this, document));
+;
+/****************************************************************************
+	fcoo-i18next-phrases.js, 
+
+	(c) 2017, FCOO
+
+	https://github.com/FCOO/fcoo-i18next-phrases
+	https://github.com/FCOO
+
+****************************************************************************/
+
+(function (i18next/*, window, document, undefined*/) {
+	"use strict";
+
+    //Initialize i18next if not already done
+    if ($.isEmptyObject(i18next.options)){
+        window.i18next.init({
+            initImmediate     : false, //prevents resource loading in init function inside setTimeout (default async behaviour)
+            resources         : {},    //Empty bagend
+            lng        : 'da',
+            fallbackLng:'en'
+       
+        });
+     }
+
+
+    function callback( err ){
+        if (err){
+            //TODO          
+        }
+        else { 
+            $('*').localize();
+        }
+    }
+    
+    function loadJSON( jsonFileName, callback, onFail ){
+        var jqxhr = $.getJSON( jsonFileName );
+
+        if (callback)
+            jqxhr.done( callback );
+            
+        if (onFail)
+            jqxhr.fail( onFail );
+    }
+
+    
+    
+    //Load "fcoo-i18next-abbr-name-link.json"
+    i18next.loadKeyPhrases( 'data/fcoo-i18next-abbr-name-link.json', callback );
+
+    
+    //Load "fcoo-parameter.json"
+    loadJSON( "data/fcoo-parameter.json", 
+        function( data ) {
+            //Create translation of units with WMO-unit and/or CF Standard Name units as key
+            $.each( data.units, function( index, unit ){
+                if (unit.en){
+                    if (unit.WMO_unit)
+                        i18next.addPhrase( 'unit', unit.WMO_unit, unit );                  
+                    if (unit.CF_unit)
+                        i18next.addPhrase( 'unit', unit.CF_unit, unit );                  
+                }
+            });
+
+            //Create translation of paramter-names with WMO-abbr and/or CF Standard Name as key
+            $.each( data.parameters, function( index, parameter ){
+                if (parameter.en){
+                    if (parameter.WMO_abbr)
+                        i18next.addPhrase( 'parameter', parameter.WMO_abbr, parameter );                  
+                    if (parameter.CF_SN)
+                        i18next.addPhrase( 'parameter', parameter.CF_SN, parameter );                  
+                }
+            });
+            $('*').localize();
+        },
+        
+        function( /*err*/ ){
+            //TODO
+        }
+    );
+
+    
+    
+    /*
+    Namespace button
+    Standard text to buttons. 
+    E.g. button:close = {da: "Luk", en:"Close"}
+    */
+
+
+    /*
+    Namespace parameter
+    Physical parameter. Using XXX codes for parameter. See http://www.nco.ncep.noaa.gov/pmb/docs/on388/table2.html
+    E.g. 
+        parameter:wind = {da:"vindhastighed", en:"wind speed"}
+        parameter:wdir = {da:"vindretning", en:"wind direction"}
+    */
+/* TODO
+
+    en: {
+          'Significant wave height of combined wind waves and swell': 'Wave height',
+          'degC': '&deg;C',
+          'Temp.': 'Temperature'
+    },
+    da: {
+          'Wave height': 'Bølgehøjde',
+          'Mean wave period': 'Bølgeperiode',
+          'Vel.': 'Strømhastighed',
+          'Current speed': 'Strømhastighed',
+          'Current': 'Strømhastighed',
+          'Elevation': 'Vandstand',
+          'Temperature': 'Temperatur',
+          'Temp.': 'Temperatur',
+          'Salinity': 'Salinitet',
+          'Sea surface temperature': 'Temperatur',
+          'Sea surface salinity': 'Salinitet',
+          'Wind speed': 'Vindhastighed',
+          'Wind': 'Vindhastighed',
+          'Air temperature (2m)': '2 meter temperatur',
+          'Sea ice concentration': 'Haviskoncentration',
+          'Sea ice thickness': 'Havistykkelse',
+          'Sea ice drift speed': 'Havisdrifthastighed',
+          'Visibility': 'Sigtbarhed',
+          'Total precipitation flux': 'Nedbør',
+          '2 metre temperature': '2 meter temperatur',
+          'Total cloud cover': 'Skydække',
+          'Significant wave height of combined wind waves and swell': 'Bølgehøjde',
+          'mm/hour': 'mm/time',
+          'degC': '&deg;C',
+          'knots': 'knob',
+          'fraction': 'fraktion',
+          'meters': 'meter'
+    }
+    
+
+*/
+
+
+
+    /*
+    Namespace unit
+    Physical units.
+    E.g. unit:metre = {da:"meter", en:"metre"}
+    */
+
+
+    //Initialize/ready 
+	$(function() { 
+
+	
+	}); //End of initialize/ready
+
+}(this.i18next, this, document));
+;
+/****************************************************************************
+	jQuery.i18nLink.js, 
+
+	(c) 2017, FCOO
+
+	https://github.com/FCOO/fcoo-i18next-phrases
+	https://github.com/FCOO
+
+****************************************************************************/
+
+(function (/*window, document, undefined*/) {
+	"use strict";
+
+    /************************************************************************
+    jQuery methods to create element with contents given by i18next-keys
+    *************************************************************************/
+
+    //Create a <a>-element with abbriviation (in <span>) and title and link (if exists)
+    $.i18nLink = function( key ){
+        return  $('<a/>')
+                    .i18n('link:'+key, 'href', {defaultValue: null})
+                    .i18n('name:'+key, 'title')
+                    .append( 
+                        $('<span/>')
+                            .i18n('abbr:'+key, {defaultValue: key.toUpperCase()} ) 
+                    );
+    };
+
+    //Initialize/ready 
+//	$(function() { 
+//	});
+
+}(this, document));
+;
+"use strict";var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj};(function(f){if((typeof exports==="undefined"?"undefined":_typeof(exports))==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Url=f()}})(function(){var define,module,exports;return function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++){s(r[o])}return s}({1:[function(require,module,exports){window.addEventListener("popstate",function(e){Url.triggerPopStateCb(e)});var Url=module.exports={_onPopStateCbs:[],_isHash:false,queryString:function queryString(name,notDecoded){name=name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");var regex=new RegExp("[\\?&]"+name+"=([^&#]*)"),results=regex.exec(location.search),encoded=null;if(results===null){regex=new RegExp("[\\?&]"+name+"(\\&([^&#]*)|$)");if(regex.test(location.search)){return true}return undefined}else{encoded=results[1].replace(/\+/g," ");if(notDecoded){return encoded}return decodeURIComponent(encoded)}},parseQuery:function parseQuery(search){var query={};if(typeof search!=="string"){search=window.location.search}search=search.replace(/^\?/g,"");if(!search){return{}}var a=search.split("&"),i=0,iequ,value=null;for(;i<a.length;++i){iequ=a[i].indexOf("=");if(iequ<0){iequ=a[i].length;value=true}else{value=decodeURIComponent(a[i].slice(iequ+1))}query[decodeURIComponent(a[i].slice(0,iequ))]=value}return query},stringify:function stringify(queryObj){if(!queryObj||queryObj.constructor!==Object){throw new Error("Query object should be an object.")}var stringified="";Object.keys(queryObj).forEach(function(c){var value=queryObj[c];stringified+=c;if(value!==true){stringified+="="+encodeURIComponent(queryObj[c])}stringified+="&"});stringified=stringified.replace(/\&$/g,"");return stringified},updateSearchParam:function updateSearchParam(param,value,push,triggerPopState){var searchParsed=this.parseQuery();if(value===undefined){delete searchParsed[param]}else{if(searchParsed[param]===value){return Url}searchParsed[param]=value}var newSearch="?"+this.stringify(searchParsed);this._updateAll(window.location.pathname+newSearch+location.hash,push,triggerPopState);return Url},getLocation:function getLocation(){return window.location.pathname+window.location.search+window.location.hash},hash:function hash(newHash,triggerPopState){if(newHash===undefined){return location.hash.substring(1)}if(!triggerPopState){setTimeout(function(){Url._isHash=false},0);Url._isHash=true}return location.hash=newHash},_updateAll:function _updateAll(s,push,triggerPopState){window.history[push?"pushState":"replaceState"](null,"",s);if(triggerPopState){Url.triggerPopStateCb({})}return s},pathname:function pathname(_pathname,push,triggerPopState){if(_pathname===undefined){return location.pathname}return this._updateAll(_pathname+window.location.search+window.location.hash,push,triggerPopState)},triggerPopStateCb:function triggerPopStateCb(e){if(this._isHash){return}this._onPopStateCbs.forEach(function(c){c(e)})},onPopState:function onPopState(cb){this._onPopStateCbs.push(cb)},removeHash:function removeHash(){this._updateAll(window.location.pathname+window.location.search,false,false)},removeQuery:function removeQuery(){this._updateAll(window.location.pathname+window.location.hash,false,false)},version:"2.3.1"}},{}]},{},[1])(1)});
+;
+/****************************************************************************
+    url.js-extensions.js, 
+
+    (c) 2016, FCOO
+
+    https://github.com/FCOO/url.js-extensions
+    https://github.com/FCOO
+
+****************************************************************************/
+
+(function ($, window, document, undefined) {
+    "use strict";
+
+    //Workaround for event.newURL and event.oldURL
+    //let this snippet run before your hashchange event binding code
+    if (!window.HashChangeEvent)(
+        function(){
+            var lastURL= document.URL;
+            window.addEventListener("hashchange", function(event){
+                Object.defineProperty(event,"oldURL",{enumerable:true,configurable:true,value:lastURL});
+                Object.defineProperty(event,"newURL",{enumerable:true,configurable:true,value:document.URL});
+                lastURL = document.URL;
+            });
+        }()
+    );
+
+
+    //Overwrite Url._updateAll to handle Security Error in Safari on Mac that prevent more that 100 history updates in 30 sec
+    window.Url._updateAll = function(s, push, triggerPopState) {
+        try {
+            window.history[push ? "pushState" : "replaceState"](null, "", s);          
+        }
+        catch (e) {
+            //Use 'old' methods - perhaps it will reload the page 
+            window.location.replace( s );
+        }
+        
+        if (triggerPopState) {
+            window.Url.triggerPopStateCb({});
+        }
+        return s;
+    };
+
+
+    /******************************************
+    anyString(name, notDecoded, search, sep)
+    Copy of Url.queryString with optional input string (search) 
+    and separaator (sep)
+    ******************************************/
+    function anyString(name, notDecoded, search, sep){
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+
+        var regex = new RegExp("[\\"+sep+"&]" + name + "=([^&#]*)")
+          , results = regex.exec(search)
+          , encoded = null
+          ;
+
+        if (results === null) {
+            regex = new RegExp("[\\"+sep+"&]" + name + "(\\&([^&#]*)|$)");
+            if (regex.test(search)) {
+                return true;
+            }
+            return undefined;
+        } else {
+            encoded = results[1].replace(/\+/g, " ");
+            if (notDecoded) {
+                return encoded;
+            }
+            return decodeURIComponent(encoded);
+        }
+    }
+
+
+    /******************************************
+    _correctSearchOrHash
+    Check and correct search or hash = ID_VALUE[&ID_VALUE]
+        ID_VALUE = 
+            ID or
+            ID=VALUE or
+            ID=VALUE,VALUE2,...,VALUEN
+        VALUE contains only a-z 0-9 - _ SPACE
+        ID contains only a-z 0-9 - _
+    *******************************************/
+    function _correctSearchOrHash( str, preChar ){
+        function decodeStr( str ){
+            try {
+                decodeURIComponent( str ); 
+                return decodeURIComponent( str ); 
+            }
+            catch(err) { 
+                return undefined;
+            }
+        }
+
+        //Chack and correct the parameter and/or hash-tag
+        var strList,
+            result = '',
+            idRegEx = new RegExp(/[\w\-_]+/),
+            idValues, id, values, value, oneValueOk, i, j;
+
+        //Convert to char
+        str = str.replace(/%3D/g, '=');
+        str = str.replace(/%2C/g, ',');
+        str = str.replace(/%3F/g, '?');
+        str = str.replace(/%23/g, '#');
+        str = str.replace(/%7B/g, '{');
+        str = str.replace(/%7D/g, '}');
+        str = str.replace(/%2B/g, '+');
+        str = str.replace(/%22/g, '"');
+        str = str.replace(/%3A/g, ':');
+
+        //Remove pre-char
+        while (preChar && str.length && (str.charAt(0) == preChar) )
+            str = str.slice(1);
+
+        strList = str.split('&'); 
+
+        for (i=0; i<strList.length; i++ ){
+            idValues = strList[i].split('=');
+            id = decodeStr( idValues[0] );
+            values = idValues[1] || undefined; 
+            oneValueOk = false;
+            if ( id && (idRegEx.exec(id) == id ) ){
+                //Correct id
+                if (values === undefined){
+                    oneValueOk = true;
+                    valueList = [];
+                }
+                else {
+                    //Check syntax of values
+                    var valueList = values.split(',');
+                    for (j=0; j<valueList.length; j++ ){
+                        value = decodeStr( valueList[j] );
+                        if ( value ){
+                            if (value == 'undefined')
+                              valueList[j] = 'false';
+                            oneValueOk = true;
+                        }
+                        else
+                            valueList[j] = undefined;
+                    }
+                }
+                if ( oneValueOk ){
+                    result += (result ? '&' : '') + id;
+                    var firstValue = true;
+                    for (j=0; j<valueList.length; j++ ){
+                        value = valueList[j];
+                        result += (firstValue ? '=' : ',') + (value ? value : ''); 
+                        firstValue = false;
+                    }
+                }
+            } //end of correct id
+        }
+        return decodeURIComponent(result);
+    }
+
+
+    /******************************************
+    adjustUrl
+    Check and correct the url
+    *******************************************/
+    function adjustUrl(){ 
+        var oldSearch = window.location.search,
+            newSearch = this._correctSearchOrHash( oldSearch, '?' ),
+            oldHash   = window.location.hash,
+            newHash   = this._correctSearchOrHash( oldHash, '#' ),
+            newUrl    = window.location.pathname +  
+                          (newSearch ? '?' + encodeURI(newSearch) : '') + 
+                          (newHash   ? '#' + encodeURI(newHash)   : '');
+
+        this._updateAll( newUrl );          
+        return newUrl;
+    }
+
+    /******************************************
+    onHashchange( handler [, context])
+    Add handler = function( event) to the event "hashchange"
+    Can by omitted if the hash-tag is updated using 
+    Url.updateHashParam(..) or Url.updateHash(..)
+    *******************************************/
+    function onHashchange( handler, context ){
+        this.hashchange = this.hashchange || [];
+        this.hashchange.push( $.proxy(handler, context) );
+    }
+   
+    /******************************************
+    hashString
+    Same as queryString but for the hash
+    It is a adjusted copy of queryString
+    *******************************************/
+    function hashString(name, notDecoded){
+        return anyString(name, notDecoded, window.location.hash, '#');
+    }
+    
+    /******************************************
+    parseHash
+    Same as parseQuery but for the hash
+    *******************************************/
+    function parseHash(){
+        return this.parseQuery( this.hash() );    
+    }
+
+    /******************************************
+    updateHash(hashObj, dontCallHashChange)
+    Update hash-tag with the id-value in hashObj
+    If dontCallHashChange==true the hashchange-event-functions 
+    added with Url.onHashchange( function[, context]) will not be called
+    *******************************************/
+    function updateHash(hashObj, dontCallHashChange){
+        this.dontCallHashChange = dontCallHashChange;
+        var newHash = this.stringify( $.extend({}, this.parseHash(), hashObj || {}) );
+
+        //return window.location.hash = '#'+newHash;
+        return this._updateAll(window.location.pathname + window.location.search + '#' + newHash, false);
+    }
+     
+    /******************************************
+    updateHashParam
+    Adds, updates or deletes a hash-tag
+    If dontCallHashChange==true the hashchange-event-functions 
+    added with Url.onHashchange( function[, context]) will not be called
+    *******************************************/
+    function updateHashParam(hashParam, value, dontCallHashChange){
+        var hashParsed = this.parseHash();
+        if (value === undefined){
+            delete hashParsed[hashParam];
+        }
+        else {
+            if (hashParsed[hashParam] === value)
+                return this;
+            hashParsed[hashParam] = value;
+        }
+        this.dontCallHashChange = dontCallHashChange;
+
+        //return window.location.hash = this.stringify(hashParsed);
+        return this._updateAll(window.location.pathname + window.location.search + '#' + this.stringify(hashParsed), false);
+
+    }
+
+
+    /******************************************
+    validateValue
+    Validate value using validator
+    validator = regExp | function( value ) | array of validator
+    *******************************************/
+    function validateJSONValue( value ){
+        try {
+            var jsonObj = JSON.parse( value );
+            if ($.type( jsonObj ) == 'object')
+                return true;
+        }
+        catch (e) { 
+            return false;
+        }
+        return false;
+    }
+
+    function validateValue( value, validator ){
+        //Convert Boolean into String
+        if ($.type( value ) === "boolean")
+            value = value ? 'true' : 'false';  
+        value = value || '';
+
+        if (validator === undefined)
+            return true;
+
+        if ( $.isFunction(validator) )
+          return !!validator( value );
+
+        if ( $.isArray(validator) ){
+            var result = true;
+            $.each( validator, function( index, _validator ){
+                if ( !validateValue( value, _validator) ){
+                    result = false;
+                    return false;
+                }
+            });
+            return result;
+        }
+        switch (validator){
+            case 'BOOLEAN' : validator = /true|false/;           break;
+            case 'NUMBER'  : validator = /[-+]?[0-9]*\.?[0-9]+/; break;
+            case 'NOTEMPTY': validator = /.+/;                   break;
+
+            //Special case for json-object-string
+            case 'JSON'    : return validateValue( value, validateJSONValue); 
+        }
+
+        var regExp = new RegExp(validator),
+            execResult = regExp.exec(value); 
+        return !!(execResult && (execResult.length == 1) && (execResult[0] == value));
+    }
+
+
+    /******************************************
+    _parseObject( obj, validatorObj, defaultObj, options )
+    Parse obj after it is validated and converted acording to
+    validatorObj, defaultObj, and options
+
+    validatorObj: object with {id: validator,..}. Failed values are removed 
+    defaultObj  : object with {id: value}. Values to be used if `id` is missing or fails validation 
+    options: {
+        convertBoolean: Boolean (default = true ) If true all values == "true" or "false" are converted into Boolean
+        convertNumber : Boolean (default = true ) If true all values representing a number is converted to float
+        convertJSON   : Boolean (default = true ) If true all values representing a stringify json-object is converted to a real json-object
+        queryOverHash : Boolean (default = true ) If true and the same id is given in both query-string and hash-tag the value from query-string is returned. 
+                                                  If false the value from hash-tag is returned
+    }
+    *******************************************/
+    function _parseObject( obj, validatorObj, defaultObj, options ){
+        validatorObj = validatorObj || {}; 
+        defaultObj = defaultObj || {}; 
+        options = $.extend( {}, options, { 
+            convertBoolean: true, 
+            convertNumber : true, 
+            convertJSON   : true,
+            queryOverHash : true 
+        }); 
+        
+        var _this = this;
+
+        //Validate all values
+        $.each( obj, function( id, value ){
+            //Convert '+' to space
+            if ( $.type(value) == 'string' )
+                value = value.replace(/\+/g, " ");
+            
+            //Validate value
+            if ( !_this.validateValue( value, validatorObj[id] ) )
+                value = undefined; 
+
+            //Convert "true" and false" to Boolean
+            if ( options.convertBoolean && ( (value == 'true') || (value == 'false') ) )
+              value = (value == 'true');
+                
+            //Convert String to Float
+            if (options.convertNumber && _this.validateValue( value, 'NUMBER') ){
+                value = parseFloat( value );
+            }
+                
+            //Remove deleted keys
+            if (value === undefined)
+                delete obj[id];
+            else
+                obj[id] = value;
+        });
+
+        //Convert String to json-object
+        if (options.convertJSON)
+            $.each( obj, function( id, value ){
+                if ( _this.validateValue( value, 'JSON') )
+                    obj[id] = JSON.parse( value );
+            });        
+        
+        //Insert default values
+        $.each( defaultObj, function( id, value ){
+            if (obj[id] === undefined)
+              obj[id] = value;
+        });
+
+        return obj;
+    }
+
+    /******************************************
+    parseAll( validatorObj, defaultObj, options )
+    Parse the combined query-string and hash-tags
+    Returns a object with `id: value` for both query-string and hash-tags
+    validatorObj, defaultObj, options: See _parseObject
+    *******************************************/
+    function parseAll( validatorObj, defaultObj, options ){
+        var _this = this,
+            queryOverHash = options ? !!options.queryOverHash : true;
+
+        function parseObj( str ){ 
+            var obj = _this.parseQuery( str );
+
+            //Use anyString(..) to get adjusted value
+            $.each( obj, function( id/*, value*/ ){
+                obj[id] = anyString(id, false, '?'+str, '?');
+            });
+
+            return _this._parseObject( obj, validatorObj, defaultObj, options ); 
+        }
+
+        var queryObj = parseObj( this._correctSearchOrHash( window.location.search, '?' ) ),
+            hashObj  = parseObj( this._correctSearchOrHash( window.location.hash,   '#' ) );
+
+        return $.extend( queryOverHash ? hashObj  : queryObj, 
+                         queryOverHash ? queryObj : hashObj   ); 
+    }
+
+    /******************************************
+    onHashChange()
+    ******************************************/
+    function onHashChange( event ){
+        //Adjust the hash-tag
+        var oldHash = window.location.hash,
+            newHash = this._correctSearchOrHash( oldHash, '#' );
+
+        if ( decodeURIComponent(oldHash.substring(1)) != decodeURIComponent(newHash) ){
+          window.location.hash = newHash; //Will trig a new call of onHashChange
+        }
+        else {
+            if (this.dontCallHashChange){
+                this.dontCallHashChange = false;
+                return;
+            }
+            //Fire the events added with Url.onHashchange
+            this.hashchange = this.hashchange || [];
+            for (var i=0; i<this.hashchange.length; i++ )
+                this.hashchange[i]( event );
+        }
+    }
+
+    /******************************************
+    //Extend window.Url with the new methods
+    ******************************************/
+    $.extend( window.Url, {
+        _correctSearchOrHash: _correctSearchOrHash,
+        adjustUrl           : adjustUrl,
+        onHashchange        : onHashchange,
+        hashString          : hashString,
+        parseHash           : parseHash,
+        updateHash          : updateHash,
+        updateHashParam     : updateHashParam,
+        validateValue       : validateValue,
+        _parseObject        : _parseObject,
+        parseAll            : parseAll,
+        onHashChange        : onHashChange
+    });
+
+    //Add the 'global' hashchange-event-methods
+    window.addEventListener("hashchange", $.proxy( onHashChange, window.Url ), false);
+
+
+
+    /******************************************
+    Initialize/ready 
+    *******************************************/
+    $(function() { 
+        window.Url.adjustUrl();
+    }); 
+    //******************************************
+
+
+
+}(jQuery, this, document));
+
+/******************************************
+Variables in window.location making up the full url
+    
+var newURL = window.location.protocol + "//" + window.location.host + "/" + window.location.pathname + window.location.search + window.location.hash;
+
+window.location.protocol
+window.location.host
+window.location.pathname
+window.location.search 
+window.location.hash 
+
+******************************************/
+
+;
+/****************************************************************************
+    fcoo-settings.js, 
+
+    (c) 2016, FCOO
+
+    https://github.com/FCOO/fcoo-settings
+    https://github.com/FCOO
+
+****************************************************************************/
+
+(function ($, window, document, undefined) {
+    "use strict";
+    
+    //Create fcoo.settings-namespace
+    window.fcoo = window.fcoo || {};
+    var ns = window.fcoo.settings = window.fcoo.settings || {};
+
+    var settings       = {},
+        loadedValues   = {},
+        queryValues    = {}, //values set in the url
+        storageIdSave  = 'fcoo_settings',
+        storageIdForce = 'fcoo_settings_FORCE';
+
+        //Get query settings            
+        try { 
+            queryValues = JSON.parse( window.Url.queryString('settings') ); 
+        }
+        catch (e) { 
+            queryValues = {}; 
+        }
+
+    /**********************************
+    Setting( options )
+    options = {id, validator, applyFunc, defaultValue, globalEvents )
+    id [String]
+    validator [null] | [String] | [function( value)]. If [String] => using Url.js-extensions validation
+    applyFunc [function( value, id, defaultValue )] function to apply the settings for id
+    defaultValue 
+    globalEvents {String} = Id of global-events in fcoo.events that aare fired when the setting is changed
+    onError [function( value, id )] (optional). Called if a new value is invalid according to validator
+    **********************************/
+    function Setting( options ) {
+        this.options = options;
+        this.options.applyFunc = options.applyFunc || function(){};
+        this.value = null;
+        this.saveValue = null;
+        if ((this.options.defaultValue === undefined) && (typeof this.options.validator == 'string') )
+            //Try to set default value based on the validator
+            switch (this.options.validator){
+                case 'BOOLEAN': this.options.defaultValue = false;  break;
+                case 'NUMBER' : this.options.defaultValue = 0;      break;
+            }
+    }
+
+    ns.Setting = Setting;
+
+    //Extend the prototype
+    ns.Setting.prototype = {
+        apply:  function ( newValue, dontCallApplyFunc ){ 
+                    var id = this.options.id;
+                    newValue = (newValue === undefined) ? this.options.defaultValue : newValue;
+
+                    if ( !window.Url.validateValue(''+newValue, this.options.validator) ){ 
+                        if (this.options.onError)
+                            this.options.onError( newValue, id );
+                        newValue = this.options.defaultValue;
+                    }
+                    
+                    this.value = newValue;
+
+                    //Set saveValue = newValue unless it is the value from query-string
+                    if ((queryValues[id] === null) || (newValue != queryValues[id]))
+                        this.saveValue = newValue;
+                    queryValues[id] = null;
+
+                    if (!dontCallApplyFunc)
+                        this.options.applyFunc( this.value, id, this.options.defaultValue );
+
+                    //Fire global-events (if any)
+                    if (this.options.globalEvents && window.fcoo.events && window.fcoo.events.fire)
+                        window.fcoo.events.fire( this.options.globalEvents, id, this.value );
+
+                }    
+    };    
+
+    /**********************************
+    add( options )
+    options = {id, validator, applyFunc, defaultValue, globalEvents )
+    id [String]
+    validator [null] | [String] | [function( value)]. If [String] = 
+    defaultValue 
+    **********************************/
+    ns.add = function( options ){
+        options = $.extend( {}, { callApply: true }, options );
+        var setting = new ns.Setting( options );
+        settings[options.id] = setting;
+        setting.apply( loadedValues[setting.options.id], !options.callApply );                       
+    };
+    
+    /**********************************
+    set( id, value, reload )
+    id [String]
+    value [any]
+    reload [Boolean] 
+    **********************************/
+    ns.set = function( id, value, reload ){
+        var setting = settings[id];
+        if (!setting)
+          return false;
+
+        //Use saved value if 'value' isn't given
+        value = value === undefined ? this.get( id ) : value;
+        setting.apply( value, reload );
+        this.save( reload );
+
+        if (reload)
+          window.location.reload();
+    };
+    
+    /**********************************
+    get( id )
+    id [String]
+    **********************************/
+    ns.get = function( id ){
+        var setting = settings[id];
+        return setting ? setting.value : undefined;
+    };
+
+    /**********************************
+    loadFromLocalStorage()
+    Load the settings from localStorage 'fcoo-settings'
+    **********************************/
+    ns.loadFromLocalStorage = function(){
+        return JSON.parse( window.localStorage.getItem( storageIdSave ) || '{}' );
+    };
+
+    /**********************************
+    load()
+    Load the settings from
+        1) sessionStorage 'fcoo-settings-FORCE', or
+        2) Load settings from
+            a: url param 'settings
+            b: localStorage 'fcoo-settings'
+            c: default values
+    **********************************/
+    ns.load = function(){
+        //1) Try loading from storageIdForce 
+        var str = window.sessionStorage.getItem( storageIdForce );
+        if (str){
+            window.sessionStorage.removeItem( storageIdForce );
+            loadedValues = JSON.parse( str );
+        }
+        else {
+            //2) Load settings from...
+            //a: url param 'settings = queryValues
+
+            //b: localStorage 'fcoo-settings', 
+            var savedValues = this.loadFromLocalStorage();
+
+            //c: default values - is set by fcoo.settings.add(...)
+
+            //Combine the new settings
+            loadedValues =  $.extend( {}, savedValues, queryValues );
+        }
+
+        $.each( settings, function( id, setting ){ 
+            setting.apply( loadedValues[id] ); 
+        });
+    };
+    
+    /**********************************
+    save( toForce, saveStr )
+    Save the settings in 
+    toForce == false: localStorage 'fcoo-settings'
+    toForce == true : sessionStorage 'fcoo-settings-FORCE'
+
+    saveStr (special case) the string to be saved and only when toForce==true
+    **********************************/
+    ns.save = function( toForce, saveStr ){ 
+        //Save all saveValue from settings
+        var settingValuesToSave = this.loadFromLocalStorage();
+        $.each( settings, function( id, setting ){ 
+            if (setting.saveValue)
+                settingValuesToSave[ setting.options.id ] = setting.saveValue;
+        });
+
+        if (toForce){
+            //Save all settings to sessionStorage 'fcoo-settings-FORCE'
+            window.sessionStorage.setItem( storageIdForce, saveStr || JSON.stringify( settingValuesToSave ) );
+        }
+        else {
+            window.localStorage.setItem( storageIdSave, JSON.stringify( settingValuesToSave ) );
+        }
+    };
+
+
+    //Load the settings
+    ns.load();
+
+    /******************************************
+    Initialize/ready 
+    *******************************************/
+//    $(function() { 
+//    }); 
+
+}(jQuery, this, document));
+;
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global.i18nextIntervalPluralPostProcessor = factory());
+}(this, (function () { 'use strict';
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
+
+function intervalMatches(interval, count) {
+  if (interval.indexOf('-') > -1) {
+    var p = interval.split('-');
+    if (p[1] === 'inf') {
+      var from = parseInt(p[0], 10);
+      return count >= from;
+    } else {
+      var _from = parseInt(p[0], 10);
+      var to = parseInt(p[1], 10);
+      return count >= _from && count <= to;
+    }
+  } else {
+    var match = parseInt(interval, 10);
+    return match === count;
+  }
+}
+
+var index = {
+  name: 'interval',
+  type: 'postProcessor',
+
+  options: {
+    intervalSeparator: ';',
+    intervalRegex: /^\((\S*)\){(.*)}$/,
+    intervalSuffix: '_interval'
+  },
+
+  setOptions: function setOptions(options) {
+    this.options = _extends({}, this.options, options);
+  },
+  process: function process(value, key, options, translator) {
+    var _this = this;
+
+    var p = value.split(this.options.intervalSeparator);
+
+    var found = void 0;
+    p.forEach(function (iv) {
+      if (found) return;
+      var match = _this.options.intervalRegex.exec(iv);
+
+      if (match && intervalMatches(match[1], options.count || 0)) {
+        found = match[2];
+      }
+    });
+
+    // not found fallback to classical plural
+    if (!found) {
+      var newOptions = _extends({}, options);
+      if (typeof newOptions.postProcess === 'string') {
+        delete newOptions.postProcess;
+      } else {
+        var index = newOptions.postProcess.indexOf('interval'); // <-- Not supported in <IE9
+        if (index !== -1) newOptions.postProcess.splice(index, 1);
+      }
+      found = translator.translate(key.replace(this.options.intervalSuffix, ''), newOptions);
+    }
+
+    return found || value;
+  }
+};
+
+return index;
+
+})));
 ;
 /****************************************************************************
 	lang-flag-icon.js,
