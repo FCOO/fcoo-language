@@ -1,6 +1,6 @@
 {
   "name": "fcoo-language",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "homepage": "https://github.com/FCOO/fcoo-language",
   "authors": [
     "Niels Holt nho@fcoo.dk"
@@ -17,9 +17,9 @@
   "dependencies": {
     "jquery": "latest",
     "lang-flag-icon": "fcoo/lang-flag-icon#^1.0.0",
-    "i18next": "^8.0.0",
-    "jquery-i18next": "1.2.0",
-    "i18next-intervalplural-postprocessor": "1.0.0",
+    "i18next": "^10.0.0",
+    "jquery-i18next": "^1.2.0",
+    "i18next-intervalplural-postprocessor": "^1.0.0",
     "fcoo-global-events": "fcoo/fcoo-global-events#latest",
     "fcoo-settings": "fcoo/fcoo-settings#latest",
     "i18next-phrases": "fcoo/i18next-phrases#^1.0.0",
@@ -28,9 +28,9 @@
   },
   "resolutions": {
     "lang-flag-icon": "^1.0.0",
-    "i18next": "^7.0.0",
-    "jquery-i18next": "1.2.0",
-    "i18next-intervalplural-postprocessor": "1.0.0"
+    "i18next": "^10.0.0",
+    "jquery-i18next": "^1.2.0",
+    "i18next-intervalplural-postprocessor": "^1.0.0"
   },
   "devDependencies": {
     "bourbon": "latest",
