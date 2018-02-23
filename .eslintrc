@@ -15,8 +15,6 @@
         "i18next"   : true
     },
 
-    "allowInlineConfig": true,
-
     "rules": {
         "strict"                  : "error",
         "camelcase"               : "off",

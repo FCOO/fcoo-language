@@ -1,5 +1,5 @@
 /***********************************************
-    fcoo-language.scss, 
+    fcoo-language.scss,
 
     (c) 2016, FCOO
 
@@ -9,7 +9,7 @@
 
 ************************************************/
 //BOURBON - http://bourbon.io/
-@import "../bower_components/bourbon/app/assets/stylesheets/bourbon";
+@import "../bower_components/bourbon/core/bourbon";
 
 //MODERNIZR-MIXIN - https://github.com/danielguillan/modernizr-mixin
 @import "../bower_components/modernizr-mixin/stylesheets/modernizr";
@@ -27,21 +27,21 @@
 
 //Adjusting default values
 $lfi-display-value     : '';    // Value for display:... when element is visible. Default = '' => no class created.
-$lfi-incl-table-display: false; // if true classes for table-elements (TABLE, TR,TD etc.) are included 
+$lfi-incl-table-display: false; // if true classes for table-elements (TABLE, TR,TD etc.) are included
 
 //$include-squared = if true css for squared flags is also created
-$include-squared: false; 
+$include-squared: false;
 
 //$flag-list = list of country-codes (XX) where there will be classes flag-icon-XX
-$flag-list: dk, fo, gl; 
+$flag-list: dk, fo, gl;
 
-//$flag-modernizr-list = list of country-codes (XX) where modernizr-classes are created (show-for-flag-XX, hide-for-flag-XX) 
+//$flag-modernizr-list = list of country-codes (XX) where modernizr-classes are created (show-for-flag-XX, hide-for-flag-XX)
 //If the second parameter is true then the classes show-for-no-flag-XX and hide-for-no-flag-XX are also created
 $flag-modernizr-list: (
     dk: false,
-    fo: false, 
+    fo: false,
     gl: false
-); 
+);
 
 
 //$lang-list = list of language-code (YY) and the selected flag/country-codes (XX)
@@ -49,21 +49,21 @@ $flag-modernizr-list: (
 $lang-list: (
   da: dk, //Danish -> Denmark
   en: gb, //English -> UK
-  fo: fo, //Faroese -> Faroe Islands 
+  fo: fo, //Faroese -> Faroe Islands
   kl: gl  //Kalaallisut/Greenlandic -> Greenland
 /*  de: de, //German -> Germany */
 /*  sv: se, //Swedish -> Sweden */
 /*  no: no, //Norwegian -> Norway */
 );
 
-//$lang-modernizr-list = list of language-codes (YY) where modernizr-classes are created (show-for-lang-YY, hide-for-lang-YY) 
+//$lang-modernizr-list = list of language-codes (YY) where modernizr-classes are created (show-for-lang-YY, hide-for-lang-YY)
 //If the second parameter is true then the classes show-for-no-lang-YY and hide-for-no-lang-YY are also created
 $lang-modernizr-list: (
     da: false,
     en: false,
 /*    fo: false, */
 /*    kl: false, */
-); 
+);
 
 @import "../bower_components/lang-flag-icon/src/lang-flag-icon";
 
