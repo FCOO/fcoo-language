@@ -10513,6 +10513,44 @@ return jQuery;
 
 }(this, document));
 ;
+/****************************************************************************
+	fcoo-data-files.js,
+
+	(c) 2018, FCOO
+
+	https://github.com/FCOO/fcoo-data-files
+	https://github.com/FCOO
+
+    fcoo.LOCAL_DATA: {boolean}
+    fcoo.dataFilePath: function(subDirName, fileName);
+
+    if fcoo.LOCAL_DATA == false:
+    fcoo.dataFilePath("theSubDir", "fileName.json") returns "https://app.fcoo.dk/static/theSubDir/fileName.json"
+
+    if fcoo.LOCAL_DATA == true:
+    fcoo.dataFilePath("theSubDir", "fileName.json") returns "/src/data/_fileName.json"
+
+****************************************************************************/
+
+(function (window/*, document, undefined*/) {
+	"use strict";
+
+	//Create fcoo-namespace
+	window.fcoo = window.fcoo || {};
+    var ns = window.fcoo,
+        fcooDataPath = 'https://app.fcoo.dk/static/';
+
+    ns.LOCAL_DATA = false;
+
+    ns.dataFilePath = function(subDir, fileName){
+        if (ns.LOCAL_DATA === true)
+            return '/src/data/_' + fileName;
+        else
+            return fcooDataPath + (subDir ? subDir + '/' : '') + fileName;
+    };
+
+}(this, document));
+;
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -10985,14 +11023,18 @@ var ResourceStore = function (_EventEmitter) {
   };
 
   ResourceStore.prototype.addResources = function addResources(lng, ns, resources) {
+    var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { silent: false };
+
     /* eslint no-restricted-syntax: 0 */
     for (var m in resources) {
       if (typeof resources[m] === 'string') this.addResource(lng, ns, m, resources[m], { silent: true });
     }
-    this.emit('added', lng, ns, resources);
+    if (!options.silent) this.emit('added', lng, ns, resources);
   };
 
   ResourceStore.prototype.addResourceBundle = function addResourceBundle(lng, ns, resources, deep, overwrite) {
+    var options = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : { silent: false };
+
     var path = [lng, ns];
     if (lng.indexOf('.') > -1) {
       path = lng.split('.');
@@ -11013,7 +11055,7 @@ var ResourceStore = function (_EventEmitter) {
 
     setPath(this.data, path, pack);
 
-    this.emit('added', lng, ns, resources);
+    if (!options.silent) this.emit('added', lng, ns, resources);
   };
 
   ResourceStore.prototype.removeResourceBundle = function removeResourceBundle(lng, ns) {
@@ -11589,6 +11631,8 @@ var PluralResolver = function () {
 
     var rule = this.getRule(code);
 
+    if (!rule) return ret;
+
     rule.numbers.forEach(function (n) {
       var suffix = _this.getSuffix(code, n);
       ret.push('' + key + suffix);
@@ -11747,8 +11791,13 @@ var Interpolator = function () {
       value = handleFormat(match[1].trim());
       if (typeof value !== 'string') value = makeString(value);
       if (!value) {
-        this.logger.warn('missed to pass in variable ' + match[1] + ' for interpolating ' + str);
-        value = '';
+        if (typeof this.options.missingInterpolationHandler === 'function') {
+          var temp = this.options.missingInterpolationHandler(str, match);
+          value = typeof temp === 'string' ? temp : '';
+        } else {
+          this.logger.warn('missed to pass in variable ' + match[1] + ' for interpolating ' + str);
+          value = '';
+        }
       }
       value = this.escapeValue ? regexSafe(this.escape(value)) : regexSafe(value);
       str = str.replace(match[0], value);
@@ -11973,7 +12022,6 @@ var Connector = function (_EventEmitter) {
       this.logger.warn('No backend was added via i18next.use. Will not load resources.');
       return callback && callback();
     }
-    var options = _extends({}, this.backend.options, this.options.backend);
 
     if (typeof languages === 'string') languages = this.languageUtils.toResolveHierarchy(languages);
     if (typeof namespaces === 'string') namespaces = [namespaces];
@@ -11984,33 +12032,9 @@ var Connector = function (_EventEmitter) {
       return null; // pendings will trigger callback
     }
 
-    // load with multi-load
-    if (options.allowMultiLoading && this.backend.readMulti) {
-      this.read(toLoad.toLoadLanguages, toLoad.toLoadNamespaces, 'readMulti', null, null, function (err, data) {
-        if (err) _this5.logger.warn('loading namespaces ' + toLoad.toLoadNamespaces.join(', ') + ' for languages ' + toLoad.toLoadLanguages.join(', ') + ' via multiloading failed', err);
-        if (!err && data) _this5.logger.log('successfully loaded namespaces ' + toLoad.toLoadNamespaces.join(', ') + ' for languages ' + toLoad.toLoadLanguages.join(', ') + ' via multiloading', data);
-
-        toLoad.toLoad.forEach(function (name) {
-          var _name$split3 = name.split('|'),
-              _name$split4 = slicedToArray(_name$split3, 2),
-              l = _name$split4[0],
-              n = _name$split4[1];
-
-          var bundle = getPath(data, [l, n]);
-          if (bundle) {
-            _this5.loaded(name, err, bundle);
-          } else {
-            var error = 'loading namespace ' + n + ' for language ' + l + ' via multiloading failed';
-            _this5.loaded(name, error);
-            _this5.logger.error(error);
-          }
-        });
-      });
-    } else {
-      toLoad.toLoad.forEach(function (name) {
-        _this5.loadOne(name);
-      });
-    }
+    toLoad.toLoad.forEach(function (name) {
+      _this5.loadOne(name);
+    });
   };
 
   Connector.prototype.reload = function reload(languages, namespaces) {
@@ -12019,37 +12043,15 @@ var Connector = function (_EventEmitter) {
     if (!this.backend) {
       this.logger.warn('No backend was added via i18next.use. Will not load resources.');
     }
-    var options = _extends({}, this.backend.options, this.options.backend);
 
     if (typeof languages === 'string') languages = this.languageUtils.toResolveHierarchy(languages);
     if (typeof namespaces === 'string') namespaces = [namespaces];
 
-    // load with multi-load
-    if (options.allowMultiLoading && this.backend.readMulti) {
-      this.read(languages, namespaces, 'readMulti', null, null, function (err, data) {
-        if (err) _this6.logger.warn('reloading namespaces ' + namespaces.join(', ') + ' for languages ' + languages.join(', ') + ' via multiloading failed', err);
-        if (!err && data) _this6.logger.log('successfully reloaded namespaces ' + namespaces.join(', ') + ' for languages ' + languages.join(', ') + ' via multiloading', data);
-
-        languages.forEach(function (l) {
-          namespaces.forEach(function (n) {
-            var bundle = getPath(data, [l, n]);
-            if (bundle) {
-              _this6.loaded(l + '|' + n, err, bundle);
-            } else {
-              var error = 'reloading namespace ' + n + ' for language ' + l + ' via multiloading failed';
-              _this6.loaded(l + '|' + n, error);
-              _this6.logger.error(error);
-            }
-          });
-        });
+    languages.forEach(function (l) {
+      namespaces.forEach(function (n) {
+        _this6.loadOne(l + '|' + n, 're');
       });
-    } else {
-      languages.forEach(function (l) {
-        namespaces.forEach(function (n) {
-          _this6.loadOne(l + '|' + n, 're');
-        });
-      });
-    }
+    });
   };
 
   Connector.prototype.loadOne = function loadOne(name) {
@@ -12057,10 +12059,10 @@ var Connector = function (_EventEmitter) {
 
     var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
 
-    var _name$split5 = name.split('|'),
-        _name$split6 = slicedToArray(_name$split5, 2),
-        lng = _name$split6[0],
-        ns = _name$split6[1];
+    var _name$split3 = name.split('|'),
+        _name$split4 = slicedToArray(_name$split3, 2),
+        lng = _name$split4[0],
+        ns = _name$split4[1];
 
     this.read(lng, ns, 'read', null, null, function (err, data) {
       if (err) _this7.logger.warn(prefix + 'loading namespace ' + ns + ' for language ' + lng + ' failed', err);
@@ -12080,68 +12082,6 @@ var Connector = function (_EventEmitter) {
     // write to store to avoid resending
     if (!languages || !languages[0]) return;
     this.store.addResource(languages[0], namespace, key, fallbackValue);
-  };
-
-  return Connector;
-}(EventEmitter);
-
-var Connector$1 = function (_EventEmitter) {
-  inherits(Connector, _EventEmitter);
-
-  function Connector(cache, store, services) {
-    var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-    classCallCheck(this, Connector);
-
-    var _this = possibleConstructorReturn(this, _EventEmitter.call(this));
-
-    _this.cache = cache;
-    _this.store = store;
-    _this.services = services;
-    _this.options = options;
-    _this.logger = baseLogger.create('cacheConnector');
-
-    if (_this.cache && _this.cache.init) _this.cache.init(services, options.cache, options);
-    return _this;
-  }
-
-  /* eslint consistent-return: 0 */
-
-
-  Connector.prototype.load = function load(languages, namespaces, callback) {
-    var _this2 = this;
-
-    if (!this.cache) return callback && callback();
-    var options = _extends({}, this.cache.options, this.options.cache);
-
-    var loadLngs = typeof languages === 'string' ? this.services.languageUtils.toResolveHierarchy(languages) : languages;
-
-    if (options.enabled) {
-      this.cache.load(loadLngs, function (err, data) {
-        if (err) _this2.logger.error('loading languages ' + loadLngs.join(', ') + ' from cache failed', err);
-        if (data) {
-          /* eslint no-restricted-syntax: 0 */
-          for (var l in data) {
-            if (Object.prototype.hasOwnProperty.call(data, l)) {
-              for (var n in data[l]) {
-                if (Object.prototype.hasOwnProperty.call(data[l], n)) {
-                  if (n !== 'i18nStamp') {
-                    var bundle = data[l][n];
-                    if (bundle) _this2.store.addResourceBundle(l, n, bundle);
-                  }
-                }
-              }
-            }
-          }
-        }
-        if (callback) callback();
-      });
-    } else if (callback) {
-      callback();
-    }
-  };
-
-  Connector.prototype.save = function save() {
-    if (this.cache && this.options.cache && this.options.cache.enabled) this.cache.save(this.store.data);
   };
 
   return Connector;
@@ -12173,6 +12113,7 @@ function get$1() {
     saveMissingTo: 'fallback', // 'current' || 'all'
     saveMissingPlurals: true, // will save all forms not only singular key
     missingKeyHandler: false, // function(lng, ns, key, fallbackValue) -> override if prefer on handling
+    missingInterpolationHandler: false, // function(str, match)
 
     postProcess: false, // string or array of postProcessor names
     returnNull: true, // allows null value as valid translation
@@ -12221,7 +12162,9 @@ function transformOptions(options) {
   if (typeof options.fallbackNS === 'string') options.fallbackNS = [options.fallbackNS];
 
   // extend whitelist with cimode
-  if (options.whitelist && options.whitelist.indexOf('cimode') < 0) options.whitelist.push('cimode');
+  if (options.whitelist && options.whitelist.indexOf('cimode') < 0) {
+    options.whitelist = options.whitelist.concat(['cimode']);
+  }
 
   return options;
 }
@@ -12290,9 +12233,6 @@ var I18n = function (_EventEmitter) {
       var s = this.services;
       s.logger = baseLogger;
       s.resourceStore = this.store;
-      s.resourceStore.on('added removed', function (lng, ns) {
-        s.cacheConnector.save();
-      });
       s.languageUtils = lu;
       s.pluralResolver = new PluralResolver(lu, { prepend: this.options.pluralSeparator, compatibilityJSON: this.options.compatibilityJSON, simplifyPluralSuffix: this.options.simplifyPluralSuffix });
       s.interpolator = new Interpolator(this.options);
@@ -12307,20 +12247,6 @@ var I18n = function (_EventEmitter) {
         _this2.emit.apply(_this2, [event].concat(args));
       });
 
-      s.backendConnector.on('loaded', function (loaded) {
-        s.cacheConnector.save();
-      });
-
-      s.cacheConnector = new Connector$1(createClassOnDemand(this.modules.cache), s.resourceStore, s, this.options);
-      // pipe events from backendConnector
-      s.cacheConnector.on('*', function (event) {
-        for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-          args[_key2 - 1] = arguments[_key2];
-        }
-
-        _this2.emit.apply(_this2, [event].concat(args));
-      });
-
       if (this.modules.languageDetector) {
         s.languageDetector = createClassOnDemand(this.modules.languageDetector);
         s.languageDetector.init(s, this.options.detection, this.options);
@@ -12329,8 +12255,8 @@ var I18n = function (_EventEmitter) {
       this.translator = new Translator(this.services, this.options);
       // pipe events from translator
       this.translator.on('*', function (event) {
-        for (var _len3 = arguments.length, args = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-          args[_key3 - 1] = arguments[_key3];
+        for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+          args[_key2 - 1] = arguments[_key2];
         }
 
         _this2.emit.apply(_this2, [event].concat(args));
@@ -12407,9 +12333,7 @@ var I18n = function (_EventEmitter) {
         });
       }
 
-      this.services.cacheConnector.load(toLoad, this.options.ns, function () {
-        _this3.services.backendConnector.load(toLoad, _this3.options.ns, callback);
-      });
+      this.services.backendConnector.load(toLoad, this.options.ns, callback);
     } else {
       callback(null);
     }
@@ -12424,10 +12348,6 @@ var I18n = function (_EventEmitter) {
   I18n.prototype.use = function use(module) {
     if (module.type === 'backend') {
       this.modules.backend = module;
-    }
-
-    if (module.type === 'cache') {
-      this.modules.cache = module;
     }
 
     if (module.type === 'logger' || module.log && module.warn && module.error) {
@@ -12492,8 +12412,8 @@ var I18n = function (_EventEmitter) {
     var _this5 = this;
 
     var fixedT = function fixedT(key, opts) {
-      for (var _len4 = arguments.length, rest = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
-        rest[_key4 - 2] = arguments[_key4];
+      for (var _len3 = arguments.length, rest = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+        rest[_key3 - 2] = arguments[_key3];
       }
 
       var options = _extends({}, opts);
@@ -12591,8 +12511,8 @@ var I18n = function (_EventEmitter) {
     });
     clone.translator = new Translator(clone.services, clone.options);
     clone.translator.on('*', function (event) {
-      for (var _len5 = arguments.length, args = Array(_len5 > 1 ? _len5 - 1 : 0), _key5 = 1; _key5 < _len5; _key5++) {
-        args[_key5 - 1] = arguments[_key5];
+      for (var _len4 = arguments.length, args = Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+        args[_key4 - 1] = arguments[_key4];
       }
 
       clone.emit.apply(clone, [event].concat(args));
@@ -18597,7 +18517,10 @@ module.exports = ret;
 
   function parseHeaders(rawHeaders) {
     var headers = new Headers()
-    rawHeaders.split(/\r?\n/).forEach(function(line) {
+    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+    // https://tools.ietf.org/html/rfc7230#section-3.2
+    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ')
+    preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
       var parts = line.split(':')
       var key = parts.shift().trim()
       if (key) {
@@ -18616,7 +18539,7 @@ module.exports = ret;
     }
 
     this.type = 'default'
-    this.status = 'status' in options ? options.status : 200
+    this.status = options.status === undefined ? 200 : options.status
     this.ok = this.status >= 200 && this.status < 300
     this.statusText = 'statusText' in options ? options.statusText : 'OK'
     this.headers = new Headers(options.headers)
@@ -18683,6 +18606,8 @@ module.exports = ret;
 
       if (request.credentials === 'include') {
         xhr.withCredentials = true
+      } else if (request.credentials === 'omit') {
+        xhr.withCredentials = false
       }
 
       if ('responseType' in xhr && support.blob) {
@@ -18754,12 +18679,20 @@ module.exports = ret;
         options = $.extend( {}, {
             retries   : 3,
             retryDelay: 1000,
-            cache     : 'reload',  //TODO: Check if it works
+            noCache   : true,
+            //            cache     : 'reload',  //TODO: Check if it works
+/*REMOVE FOR NOW. NEED TO FIND A WAY TO FORCE NO-CACHE
             headers   : {
                 "Cache-Control": 'no-cache'    //TODO: Check if this works
-
             }
+*/
         }, options || {});
+
+        //Adding parame dummy=12345678 if options.noCache: true to force no-cache. TODO: Replaced with correct header
+        if (options.noCache)
+            url = url + (url.indexOf('?') > 0 ? '&' : '?') + 'dummy='+Math.random().toString(36).substr(2, 9);
+
+
 
         return new Promise(function(resolve, reject) {
             var wrappedFetch = function(n) {
@@ -19477,146 +19410,154 @@ return index;
             initImmediate: false, //prevents resource loading in init function inside setTimeout (default async behaviour)
             resources    : {},    //Empty bagend
             lng          : 'da',
-            fallbackLng  :'en'
+            fallbackLng  : 'en'
 
         });
      }
 
-    var loadOptions = {
-        finally: function() { $('*').localize(); }
-    };
-
-    //Load json-files with i18next-phrases. See README.md for description of format
-    i18next.loadKeyPhrases(
-        [
-            'data/fcoo-i18next-abbr-name-link.json'
-        ],
-        loadOptions
-    );
-
-    i18next.loadPhrases(
-        [
-            'data/fcoo-i18next-error.json',
-        ],
-        loadOptions
-    );
-
-    //Load "fcoo-i18next-parameter.json"
-    Promise.getJSON( "data/fcoo-i18next-parameter.json", {}, function( data ) {
-        //Create translation of units with WMO-unit and/or CF Standard Name units as key
-        $.each( data.units, function( index, unit ){
-            if (unit.en){
-                if (unit.WMO_unit)
-                    i18next.addPhrase( 'unit', unit.WMO_unit, unit );
-                if (unit.CF_unit)
-                    i18next.addPhrase( 'unit', unit.CF_unit,  unit );
-            }
-        });
-
-        //Create translation of paramter-names with WMO-abbr and/or CF Standard Name as key
-        $.each( data.parameters, function( index, parameter ){
-            if (parameter.en){
-                if (parameter.WMO_abbr)
-                    i18next.addPhrase( 'parameter', parameter.WMO_abbr, parameter );
-                if (parameter.CF_SN)
-                    i18next.addPhrase( 'parameter', parameter.CF_SN, parameter );
-            }
-        });
-        $('*').localize();
-    });
-
-
-
-    /*
-    Namespace button
-    Standard text to buttons.
-    E.g. button:close = {da: "Luk", en:"Close"}
-    */
-
-
-    /*
-    Namespace parameter
-    Physical parameter. Using XXX codes for parameter. See http://www.nco.ncep.noaa.gov/pmb/docs/on388/table2.html
-    E.g.
-        parameter:wind = {da:"vindhastighed", en:"wind speed"}
-        parameter:wdir = {da:"vindretning", en:"wind direction"}
-    */
-/* TODO
-
-    en: {
-          'Significant wave height of combined wind waves and swell': 'Wave height',
-          'degC': '&deg;C',
-          'Temp.': 'Temperature'
-    },
-    da: {
-          'Wave height': 'Bølgehøjde',
-          'Mean wave period': 'Bølgeperiode',
-          'Vel.': 'Strømhastighed',
-          'Current speed': 'Strømhastighed',
-          'Current': 'Strømhastighed',
-          'Elevation': 'Vandstand',
-          'Temperature': 'Temperatur',
-          'Temp.': 'Temperatur',
-          'Salinity': 'Salinitet',
-          'Sea surface temperature': 'Temperatur',
-          'Sea surface salinity': 'Salinitet',
-          'Wind speed': 'Vindhastighed',
-          'Wind': 'Vindhastighed',
-          'Air temperature (2m)': '2 meter temperatur',
-          'Sea ice concentration': 'Haviskoncentration',
-          'Sea ice thickness': 'Havistykkelse',
-          'Sea ice drift speed': 'Havisdrifthastighed',
-          'Visibility': 'Sigtbarhed',
-          'Total precipitation flux': 'Nedbør',
-          '2 metre temperature': '2 meter temperatur',
-          'Total cloud cover': 'Skydække',
-          'Significant wave height of combined wind waves and swell': 'Bølgehøjde',
-          'mm/hour': 'mm/time',
-          'degC': '&deg;C',
-          'knots': 'knob',
-          'fraction': 'fraktion',
-          'meters': 'meter'
-    }
-
-
-*/
-/* TODO
-           var msg = 'Web map metadata request for ' + jqXHR.url + ' failed. Reason: ';
-            if (jqXHR.status === 0) {
-                msg += 'No network connection.';
-                this.options.onMetadataError(new MetadataError(msg));
-            } else {
-                if (jqXHR.status == 404) {
-                    msg += 'Requested page not found. [404]';
-                } else if (jqXHR.status == 500) {
-                    msg += 'Internal Server Error [500].';
-                } else if (textStatus === 'parsererror') {
-                    msg += 'Requested JSON parse failed.';
-                } else if (textStatus === 'timeout') {
-                    msg += 'Time out error.';
-                } else if (textStatus === 'abort') {
-                    msg += 'Ajax request aborted.';
-                } else {
-                    msg += 'Unknown error.\n' + jqXHR.responseText;
-                }
-                var err = new MetadataError(msg);
-                this.options.onMetadataError(err);
-*/
-
-
-    /*
-    Namespace unit
-    Physical units.
-    E.g. unit:metre = {da:"meter", en:"metre"}
-    */
-
-
-    //Initialize/ready
+    //Load phrase-files when initialize/ready
 	$(function() {
 
+        var loadOptions = {
+                finally: function() { $('*').localize(); }
+            };
 
+        function fullFileName( fileName ){
+            return window.fcoo.dataFilePath("fcoo-i18next-phrases", fileName);
+        }
+
+
+        //Load key-phrase-files = { key: { namespace1: {..}, namespace2:{...} }*N }. See README.md for description of format
+        $.each(
+            [
+                'fcoo-i18next-abbr-name-link.json'
+            ],
+            function(index, fileName){ i18next.loadKeyPhrases( fullFileName( fileName ), loadOptions ); }
+        );
+
+
+        //Load phrase-files = { namespace: { key1: {..}, key2:{...} }*N }. See README.md for description of format
+        $.each(
+            [
+                'fcoo-i18next-error.json'
+            ],
+            function(index, fileName){ i18next.loadPhrases( fullFileName( fileName ), loadOptions ); }
+        );
+
+
+        //Load "fcoo-i18next-parameter.json"
+        Promise.getJSON(
+            fullFileName("fcoo-i18next-parameter.json"),
+            $.extend( {},
+                loadOptions, {
+                resolve: function( data ) {
+                    //Create translation of units with WMO-unit and/or CF Standard Name units as key
+                    $.each( data.units, function( index, unit ){
+                        if (unit.en){
+                            if (unit.WMO_unit)
+                                i18next.addPhrase( 'unit', unit.WMO_unit, unit );
+                            if (unit.CF_unit)
+                                i18next.addPhrase( 'unit', unit.CF_unit,  unit );
+                        }
+                    });
+
+                    //Create translation of paramter-names with WMO-abbr and/or CF Standard Name as key
+                    $.each( data.parameters, function( index, parameter ){
+                        if (parameter.en){
+                            if (parameter.WMO_abbr)
+                                i18next.addPhrase( 'parameter', parameter.WMO_abbr, parameter );
+                            if (parameter.CF_SN)
+                                i18next.addPhrase( 'parameter', parameter.CF_SN, parameter );
+                        }
+                    });
+//                  $('*').localize();
+                }
+            })
+        );
+
+
+
+        /*
+        Namespace button
+        Standard text to buttons.
+        E.g. button:close = {da: "Luk", en:"Close"}
+        */
+
+
+        /*
+        Namespace parameter
+        Physical parameter. Using XXX codes for parameter. See http://www.nco.ncep.noaa.gov/pmb/docs/on388/table2.html
+        E.g.
+            parameter:wind = {da:"vindhastighed", en:"wind speed"}
+            parameter:wdir = {da:"vindretning", en:"wind direction"}
+        */
+/* TODO
+
+        en: {
+              'Significant wave height of combined wind waves and swell': 'Wave height',
+              'degC': '&deg;C',
+              'Temp.': 'Temperature'
+        },
+        da: {
+              'Wave height': 'Bølgehøjde',
+              'Mean wave period': 'Bølgeperiode',
+              'Vel.': 'Strømhastighed',
+              'Current speed': 'Strømhastighed',
+              'Current': 'Strømhastighed',
+              'Elevation': 'Vandstand',
+              'Temperature': 'Temperatur',
+              'Temp.': 'Temperatur',
+              'Salinity': 'Salinitet',
+              'Sea surface temperature': 'Temperatur',
+              'Sea surface salinity': 'Salinitet',
+              'Wind speed': 'Vindhastighed',
+              'Wind': 'Vindhastighed',
+              'Air temperature (2m)': '2 meter temperatur',
+              'Sea ice concentration': 'Haviskoncentration',
+              'Sea ice thickness': 'Havistykkelse',
+              'Sea ice drift speed': 'Havisdrifthastighed',
+              'Visibility': 'Sigtbarhed',
+              'Total precipitation flux': 'Nedbør',
+              '2 metre temperature': '2 meter temperatur',
+              'Total cloud cover': 'Skydække',
+              'Significant wave height of combined wind waves and swell': 'Bølgehøjde',
+              'mm/hour': 'mm/time',
+              'degC': '&deg;C',
+              'knots': 'knob',
+              'fraction': 'fraktion',
+              'meters': 'meter'
+        }
+*/
+/* TODO
+               var msg = 'Web map metadata request for ' + jqXHR.url + ' failed. Reason: ';
+                if (jqXHR.status === 0) {
+                    msg += 'No network connection.';
+                    this.options.onMetadataError(new MetadataError(msg));
+                } else {
+                    if (jqXHR.status == 404) {
+                        msg += 'Requested page not found. [404]';
+                    } else if (jqXHR.status == 500) {
+                        msg += 'Internal Server Error [500].';
+                    } else if (textStatus === 'parsererror') {
+                        msg += 'Requested JSON parse failed.';
+                    } else if (textStatus === 'timeout') {
+                        msg += 'Time out error.';
+                    } else if (textStatus === 'abort') {
+                        msg += 'Ajax request aborted.';
+                    } else {
+                        msg += 'Unknown error.\n' + jqXHR.responseText;
+                    }
+                    var err = new MetadataError(msg);
+                    this.options.onMetadataError(err);
+*/
+
+
+        /*
+        Namespace unit
+        Physical units.
+        E.g. unit:metre = {da:"meter", en:"metre"}
+        */
 	}); //End of initialize/ready
-
 }(this.i18next, this.Promise, this, document));
 ;
 /****************************************************************************
