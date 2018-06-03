@@ -1,6 +1,6 @@
 {
   "name": "fcoo-language",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "homepage": "https://github.com/FCOO/fcoo-language",
   "authors": [
     "Niels Holt nho@fcoo.dk"
@@ -16,18 +16,19 @@
   },
   "dependencies": {
     "jquery": "latest",
-    "lang-flag-icon": "fcoo/lang-flag-icon#^1.0.0",
     "i18next": "^11.0.0",
     "i18next-intervalplural-postprocessor": "^1.0.0",
     "fcoo-global-events": "fcoo/fcoo-global-events#latest",
     "fcoo-settings": "fcoo/fcoo-settings#latest",
-    "fcoo-i18next-phrases": "fcoo/fcoo-i18next-phrases#^1.0.0"
+    "fcoo-i18next-phrases": "fcoo/fcoo-i18next-phrases#^1.0.0",
+    "modernizr-javascript": "fcoo/modernizr-javascript#^1.1.2"
   },
   "devDependencies": {
     "bourbon": "latest",
     "modernizr-mixin": "latest",
     "mathsass": "latest",
-    "modernizr-scss": "fcoo/modernizr-scss#latest"
+    "modernizr-scss": "fcoo/modernizr-scss#latest",
+    "lang-flag-icon": "fcoo/lang-flag-icon#^1.0.0"
   },
   "license": "MIT",
   "ignore": [

@@ -9,11 +9,11 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
-  <link  href="../src/fcoo-language.css" rel="stylesheet">	
-	<style> 
+  <link  href="../src/fcoo-language.css" rel="stylesheet">
+	<style>
 		div.big {
-			display:inline-block; 
-			width:100px; 
+			display:inline-block;
+			width:100px;
 			height:75px;
 			border: 1px solid black;
 			margin-right: 4px;
@@ -28,7 +28,7 @@
         <div class="big fa-lang-da show-for-lang-da"></div>
         <div class="big fa-lang-en show-for-lang-en"></div>
 	<hr>
-    
+
     <h2 id="flag">Installed flags (fa-flag-XX)</h2>
 
 	<hr>
@@ -45,21 +45,19 @@
         <li><a href="#" onclick="fcoo.settings.set( 'language', i18next.language == 'en' ? 'da' : 'en', false);" data-i18n="nav:change"></a></li>
     </ul>
 
-	
+
 	<script src="bower_components.js"></script>
 	<script src="../src/fcoo-language.js"></script>
 	<script>
 		//var langFlag = new window.LangFlag();
 		var h = $('#flag');
-		for (var i=0; i<fcoo.langFlag.flagList.length; i++ ){
-			var flag = fcoo.langFlag.flagList[i];
+        $.each( ['dk', 'fo', 'gl'], function( index, flag ){
 			$('<div title="flag='+flag+'" class="big fa-flag-'+flag+'"></div>').insertAfter( h );
-		}
+		});
 		var h = $('#lang');
-		for (var i=0; i<fcoo.langFlag.langList.length; i++ ){
-			var lang = fcoo.langFlag.langList[i];
+        $.each( ['da', 'en', 'fo', 'kl'], function( index, lang ){
 			$('<div title="lang='+lang+'" class="big fa-lang-'+lang+'"></div>').insertAfter( h );
-		}
+		});
 
         i18next
             .addPhrase("Dette_er_en_test", {en:"This is a test", da:"Dette er en test"})
@@ -81,20 +79,20 @@
 
         i18next.addPhrase("This is fallback value", {no:"Dette er på dansk"});
         //console.log(i18next.t("This is fallback value"));
-    $(function() { 
+    $(function() {
         var li = $('<li>').prependTo( $('.nav') );
         $('<a href="#"/>')
             .i18n('nav:position', {count:123})
             .i18n('nav:firstpage', 'title')
-            .appendTo(li);        
+            .appendTo(li);
 
         li = $('<li>').prependTo( $('.nav') );
         $('<a href="#"/>')
 //            .i18n({da:'i18n() På dansk', en:'i18n() In English'})
             .i18n('{"da":"i18n() På dansk", "en":"i18n() In English"}')
-            .appendTo(li);        
-    
-    }); 
+            .appendTo(li);
+
+    });
 
 	</script>
 </body>

@@ -10839,9 +10839,7 @@ var EventEmitter = function () {
     if (this.observers['*']) {
       var _cloned = [].concat(this.observers['*']);
       _cloned.forEach(function (observer) {
-        var _ref;
-
-        observer.apply(observer, (_ref = [event]).concat.apply(_ref, args));
+        observer.apply(observer, [event].concat(args));
       });
     }
   };
@@ -10967,6 +10965,9 @@ var ResourceStore = function (_EventEmitter) {
 
     _this.data = data || {};
     _this.options = options;
+    if (_this.options.keySeparator === undefined) {
+      _this.options.keySeparator = '.';
+    }
     return _this;
   }
 
@@ -10986,8 +10987,7 @@ var ResourceStore = function (_EventEmitter) {
   ResourceStore.prototype.getResource = function getResource(lng, ns, key) {
     var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
-    var keySeparator = options.keySeparator || this.options.keySeparator;
-    if (keySeparator === undefined) keySeparator = '.';
+    var keySeparator = options.keySeparator !== undefined ? options.keySeparator : this.options.keySeparator;
 
     var path = [lng, ns];
     if (key && typeof key !== 'string') path = path.concat(key);
@@ -11114,9 +11114,13 @@ var Translator = function (_EventEmitter) {
 
     var _this = possibleConstructorReturn(this, _EventEmitter.call(this));
 
-    copy(['resourceStore', 'languageUtils', 'pluralResolver', 'interpolator', 'backendConnector'], services, _this);
+    copy(['resourceStore', 'languageUtils', 'pluralResolver', 'interpolator', 'backendConnector', 'i18nFormat'], services, _this);
 
     _this.options = options;
+    if (_this.options.keySeparator === undefined) {
+      _this.options.keySeparator = '.';
+    }
+
     _this.logger = baseLogger.create('translator');
     return _this;
   }
@@ -11135,7 +11139,8 @@ var Translator = function (_EventEmitter) {
   Translator.prototype.extractFromKey = function extractFromKey(key, options) {
     var nsSeparator = options.nsSeparator || this.options.nsSeparator;
     if (nsSeparator === undefined) nsSeparator = ':';
-    var keySeparator = options.keySeparator || this.options.keySeparator || '.';
+
+    var keySeparator = options.keySeparator !== undefined ? options.keySeparator : this.options.keySeparator;
 
     var namespaces = options.ns || this.options.defaultNS;
     if (nsSeparator && key.indexOf(nsSeparator) > -1) {
@@ -11166,7 +11171,7 @@ var Translator = function (_EventEmitter) {
     if (typeof keys === 'string') keys = [keys];
 
     // separators
-    var keySeparator = options.keySeparator || this.options.keySeparator || '.';
+    var keySeparator = options.keySeparator !== undefined ? options.keySeparator : this.options.keySeparator;
 
     // get namespace(s)
 
@@ -11207,7 +11212,7 @@ var Translator = function (_EventEmitter) {
 
       // if we got a separator we loop over children - else we just return object as is
       // as having it set to false means no hierarchy so no lookup for nested values
-      if (options.keySeparator || this.options.keySeparator) {
+      if (keySeparator) {
         var copy$$1 = resType === '[object Array]' ? [] : {}; // apply child translation on a copy
 
         /* eslint no-restricted-syntax: 0 */
@@ -11281,7 +11286,7 @@ var Translator = function (_EventEmitter) {
       }
 
       // extend
-      res = this.extendTranslation(res, keys, options);
+      res = this.extendTranslation(res, keys, options, resolved);
 
       // append namespace if still key
       if (usedKey && res === key && this.options.appendNamespaceToMissingKey) res = namespace + ':' + key;
@@ -11294,22 +11299,27 @@ var Translator = function (_EventEmitter) {
     return res;
   };
 
-  Translator.prototype.extendTranslation = function extendTranslation(res, key, options) {
+  Translator.prototype.extendTranslation = function extendTranslation(res, key, options, resolved) {
     var _this3 = this;
 
-    if (options.interpolation) this.interpolator.init(_extends({}, options, { interpolation: _extends({}, this.options.interpolation, options.interpolation) }));
+    if (this.i18nFormat && this.i18nFormat.parse) {
+      res = this.i18nFormat.parse(res, options, resolved.usedLng, resolved.usedNS, resolved.usedKey);
+    } else if (!options.skipInterpolation) {
+      // i18next.parsing
+      if (options.interpolation) this.interpolator.init(_extends({}, options, { interpolation: _extends({}, this.options.interpolation, options.interpolation) }));
 
-    // interpolate
-    var data = options.replace && typeof options.replace !== 'string' ? options.replace : options;
-    if (this.options.interpolation.defaultVariables) data = _extends({}, this.options.interpolation.defaultVariables, data);
-    res = this.interpolator.interpolate(res, data, options.lng || this.language);
+      // interpolate
+      var data = options.replace && typeof options.replace !== 'string' ? options.replace : options;
+      if (this.options.interpolation.defaultVariables) data = _extends({}, this.options.interpolation.defaultVariables, data);
+      res = this.interpolator.interpolate(res, data, options.lng || this.language);
 
-    // nesting
-    if (options.nest !== false) res = this.interpolator.nest(res, function () {
-      return _this3.translate.apply(_this3, arguments);
-    }, options);
+      // nesting
+      if (options.nest !== false) res = this.interpolator.nest(res, function () {
+        return _this3.translate.apply(_this3, arguments);
+      }, options);
 
-    if (options.interpolation) this.interpolator.reset();
+      if (options.interpolation) this.interpolator.reset();
+    }
 
     // post process
     var postProcess = options.postProcess || this.options.postProcess;
@@ -11329,6 +11339,8 @@ var Translator = function (_EventEmitter) {
 
     var found = void 0;
     var usedKey = void 0;
+    var usedLng = void 0;
+    var usedNS = void 0;
 
     if (typeof keys === 'string') keys = [keys];
 
@@ -11348,24 +11360,30 @@ var Translator = function (_EventEmitter) {
 
       namespaces.forEach(function (ns) {
         if (_this4.isValidLookup(found)) return;
+        usedNS = ns;
 
         codes.forEach(function (code) {
           if (_this4.isValidLookup(found)) return;
+          usedLng = code;
 
           var finalKey = key;
           var finalKeys = [finalKey];
 
-          var pluralSuffix = void 0;
-          if (needsPluralHandling) pluralSuffix = _this4.pluralResolver.getSuffix(code, options.count);
+          if (_this4.i18nFormat && _this4.i18nFormat.addLookupKeys) {
+            _this4.i18nFormat.addLookupKeys(finalKeys, key, code, ns, options);
+          } else {
+            var pluralSuffix = void 0;
+            if (needsPluralHandling) pluralSuffix = _this4.pluralResolver.getSuffix(code, options.count);
 
-          // fallback for plural if context not found
-          if (needsPluralHandling && needsContextHandling) finalKeys.push(finalKey + pluralSuffix);
+            // fallback for plural if context not found
+            if (needsPluralHandling && needsContextHandling) finalKeys.push(finalKey + pluralSuffix);
 
-          // get key for context if needed
-          if (needsContextHandling) finalKeys.push(finalKey += '' + _this4.options.contextSeparator + options.context);
+            // get key for context if needed
+            if (needsContextHandling) finalKeys.push(finalKey += '' + _this4.options.contextSeparator + options.context);
 
-          // get key for plural if needed
-          if (needsPluralHandling) finalKeys.push(finalKey += pluralSuffix);
+            // get key for plural if needed
+            if (needsPluralHandling) finalKeys.push(finalKey += pluralSuffix);
+          }
 
           // iterate over finalKeys starting with most specific pluralkey (-> contextkey only) -> singularkey only
           var possibleKey = void 0;
@@ -11379,7 +11397,7 @@ var Translator = function (_EventEmitter) {
       });
     });
 
-    return { res: found, usedKey: usedKey };
+    return { res: found, usedKey: usedKey, usedLng: usedLng, usedNS: usedNS };
   };
 
   Translator.prototype.isValidLookup = function isValidLookup(res) {
@@ -11789,8 +11807,7 @@ var Interpolator = function () {
     // regular escape on demand
     while (match = this.regexp.exec(str)) {
       value = handleFormat(match[1].trim());
-      if (typeof value !== 'string') value = makeString(value);
-      if (!value) {
+      if (value === undefined) {
         if (typeof this.options.missingInterpolationHandler === 'function') {
           var temp = this.options.missingInterpolationHandler(str, match);
           value = typeof temp === 'string' ? temp : '';
@@ -11798,6 +11815,8 @@ var Interpolator = function () {
           this.logger.warn('missed to pass in variable ' + match[1] + ' for interpolating ' + str);
           value = '';
         }
+      } else if (typeof value !== 'string') {
+        value = makeString(value);
       }
       value = this.escapeValue ? regexSafe(this.escape(value)) : regexSafe(value);
       str = str.replace(match[0], value);
@@ -12130,7 +12149,6 @@ function get$1() {
       if (args[2]) ret.tDescription = args[2];
       return ret;
     },
-
     interpolation: {
       escapeValue: true,
       format: function format(value, _format, lng) {
@@ -12252,6 +12270,11 @@ var I18n = function (_EventEmitter) {
         s.languageDetector.init(s, this.options.detection, this.options);
       }
 
+      if (this.modules.i18nFormat) {
+        s.i18nFormat = createClassOnDemand(this.modules.i18nFormat);
+        if (s.i18nFormat.init) s.i18nFormat.init(this);
+      }
+
       this.translator = new Translator(this.services, this.options);
       // pipe events from translator
       this.translator.on('*', function (event) {
@@ -12356,6 +12379,10 @@ var I18n = function (_EventEmitter) {
 
     if (module.type === 'languageDetector') {
       this.modules.languageDetector = module;
+    }
+
+    if (module.type === 'i18nFormat') {
+      this.modules.i18nFormat = module;
     }
 
     if (module.type === 'postProcessor') {
@@ -20586,100 +20613,45 @@ return index;
 
 ;
 /****************************************************************************
-    lang-flag-icon.js,
+	modernizr-javascript.js, 
 
-    (c) 2016, FCOO
+	(c) 2016, FCOO
 
-    https://github.com/FCOO/lang-flag-icon
-    https://github.com/FCOO
+	https://github.com/FCOO/modernizr-javascript
+	https://github.com/FCOO
 
 ****************************************************************************/
 
-(function ($, window/*, document, undefined*/) {
-    "use strict";
+(function ($, window, document, undefined) {
+	"use strict";
+	
+	var ns = window;
 
-    var ns = window;
+    //Extend the jQuery prototype
+    $.fn.extend({
+        modernizrOn : function( test ){ 
+            return this.modernizrToggle( test, true ); 
+        },
 
-    function LangFlag( options ) {
-        this.VERSION = "1.0.1";
-        this.options = $.extend({
-            //Default options
-            defaultFlag: 'dk',
-            defaultLang: 'da'
-        }, options || {} );
+        modernizrOff: function( test ){ 
+            return this.modernizrToggle( test, false ); 
+        },
+        
+        modernizrToggle: function( test, on ){ 
+		if ( on === undefined )
+            return this.modernizrToggle( test, !this.hasClass( test ) );
 
-        this.modernizr = window.Modernizr;
-
-        function readListFromFontFamily( className ){
-            var meta= $('<meta class="' + className + '">').appendTo(document.head),
-                str = meta.css('font-family'),
-                i, 
-                result = [];
-
-            meta.remove();
-            for (i=0; i<str.length; i=i+2 )
-                result.push( str.slice(i, i+2) );
-            return result;
+            on = !!on; //on => Boolean
+            return this.toggleClass( test, on ).toggleClass( 'no-' + test, !on );
         }
-
-        //Reads the list of flags from the css-file using the 'dummy' class "lang-flag-icon-flag"
-        this.flagList = readListFromFontFamily( 'lang-flag-icon-flag' );
-
-        //Reads the list of flags with modernizr-classes from the css-file using the 'dummy' class "lang-flag-icon-flag-modernizr"
-        this.flagModernizrList = readListFromFontFamily( 'lang-flag-icon-flag-modernizr' );
-
-        if (this.flagModernizrList.length)
-            this.setFlag( this.options.defaultFlag);
-
-        //Reads the list of langs from the css-file using the 'dummy' class "lang-flag-icon-lang"
-        this.langList = readListFromFontFamily( 'lang-flag-icon-lang' );
-
-        //Reads the list of langs with modernizr-classes from the css-file using the 'dummy' class "lang-flag-icon-lang-modernizr"
-        this.langModernizrList = readListFromFontFamily( 'lang-flag-icon-lang-modernizr' );
-
-        if (this.langModernizrList.length)
-            this.setLang( this.options.defaultLang);
+    });
 
 
+    //Add methods to window = works on <html>
+    ns.modernizrOn  = function( test ){ ns.modernizrToggle( test, true ); };
 
-    }
+    ns.modernizrOff = function( test ){ ns.modernizrToggle( test, false ); };
 
-    // expose access to the constructor
-    ns.LangFlag = LangFlag;
-
-    //Extend the prototype
-    ns.LangFlag.prototype = {
-
-        //setFlag
-        setFlag: function( flag ){    this._set( 'flag', this.flagModernizrList, flag );    },
-
-        //setLang
-        setLang: function( lang ){    this._set( 'lang', this.langModernizrList, lang );    },
-
-        //_set
-        _set: function( prefix, list, id ){
-            var i, nextId, isOn, onClassName, offClassName;
-            for (i=0; i<list.length; i++ ){
-                nextId = list[i];
-                isOn = (nextId == id);
-                onClassName  = prefix + '-' + nextId;
-                offClassName = 'no-' + onClassName;
-                $('html').toggleClass( onClassName, isOn );
-                $('html').toggleClass( offClassName, !isOn );
-            }
-        }
-
-    };
-
-
-    /******************************************
-    Initialize/ready
-    *******************************************/
-    $(function() { //"$( function() { ... });" is short for "$(document).ready( function(){...});"
-
-    }); //End of initialize/ready
-    //******************************************
-
-
+    ns.modernizrToggle = function( test, on ){ $('html').modernizrToggle( test, on ); };
 
 }(jQuery, this, document));

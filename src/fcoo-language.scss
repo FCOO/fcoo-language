@@ -37,15 +37,13 @@ $flag-list: dk, fo, gl;
 
 //$flag-modernizr-list = list of country-codes (XX) where modernizr-classes are created (show-for-flag-XX, hide-for-flag-XX)
 //If the second parameter is true then the classes show-for-no-flag-XX and hide-for-no-flag-XX are also created
-$flag-modernizr-list: (
-    dk: false,
-    fo: false,
-    gl: false
-);
+//REMOVED IN VERSION 5.x
+//$flag-modernizr-list: (dk: false, fo: false, gl: false);
+$flag-modernizr-list: ();
 
 
 //$lang-list = list of language-code (YY) and the selected flag/country-codes (XX)
-// **NOTE ** THIS LIST MUST MATCH THE LIST languages IN src/fcoo-language.js
+// **NOTE ** THIS LIST MUST CONTAIN ALL LANGUAGE CODES IN THE LIST languages IN src/fcoo-language.js
 $lang-list: (
   da: dk, //Danish -> Denmark
   en: gb, //English -> UK
@@ -58,12 +56,9 @@ $lang-list: (
 
 //$lang-modernizr-list = list of language-codes (YY) where modernizr-classes are created (show-for-lang-YY, hide-for-lang-YY)
 //If the second parameter is true then the classes show-for-no-lang-YY and hide-for-no-lang-YY are also created
-$lang-modernizr-list: (
-    da: false,
-    en: false,
-/*    fo: false, */
-/*    kl: false, */
-);
+//REMOVED IN VERSION 5.x
+//$lang-modernizr-list: (da: false, en: false, /*fo: false, kl: false, */);
+$lang-modernizr-list: ();
 
 @import "../bower_components/lang-flag-icon/src/lang-flag-icon";
 
