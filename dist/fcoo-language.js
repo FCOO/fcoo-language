@@ -188,11 +188,8 @@
     i18next.use(nameOfProcessor);
 */
 
-    //Initialize/ready
-    $(function() {
-        //Update all language related elements
-        ns.settings.set('language', language );
-    });
+    //Update all language related elements
+    ns.settings.set('language', language );
 
 
 }(jQuery, this, document));
