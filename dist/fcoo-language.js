@@ -16,7 +16,7 @@
     var ns = window.fcoo;
 
     //global events "languagechanged" fired when the language is changed
-    var languagechanged = "languagechanged";
+    var languagechanged = window.fcoo.events.LANGUAGECHANGED;
 
     //*****************************************************************************
     // All available languages.
@@ -130,18 +130,6 @@
     //fallback used when initialize i18next
     var fallbackLng = getFallbackLng( language, ns.settings.get('language2') );
 
-
-    /***********************************************************
-    Create fcoo.langFlag - REMOVED IN VERSION 5.x
-    ***********************************************************/
-//    ns.langFlag = new window.LangFlag({ defaultFlag:'dk', defaultLang: 'da' });
-
-    //Change language in ns.langFlag when language is changed
-//    ns.events.on( languagechanged, function(){
-//        ns.langFlag.setLang( i18next.language );
-//    });
-
-
     /***********************************************************
     Ininialize i18next
     ***********************************************************/
@@ -159,7 +147,8 @@
     i18next.use( window.i18nextIntervalPluralPostProcessor );
 
 
-    //Fire languagechenged when language is changed
+    //To capture both language-change by fcoo.settings and by i18next direct
+    //fire globalEvent LANGUAGECHENGED when language is changed via i18next
     i18next.on('languageChanged', function() {
         ns.events.fire( languagechanged );
     });
