@@ -10847,6 +10847,22 @@ var EventEmitter = function () {
   return EventEmitter;
 }();
 
+// http://lea.verou.me/2016/12/resolve-promises-externally-with-this-one-weird-trick/
+function defer() {
+  var res = void 0;
+  var rej = void 0;
+
+  var promise = new Promise(function (resolve, reject) {
+    res = resolve;
+    rej = reject;
+  });
+
+  promise.resolve = res;
+  promise.reject = rej;
+
+  return promise;
+}
+
 function makeString(object) {
   if (object == null) return '';
   /* eslint prefer-template: 0 */
@@ -10935,12 +10951,12 @@ function regexEscape(str) {
 
 /* eslint-disable */
 var _entityMap = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
   '"': '&quot;',
   "'": '&#39;',
-  "/": '&#x2F;'
+  '/': '&#x2F;'
 };
 /* eslint-enable */
 
@@ -11092,7 +11108,6 @@ var ResourceStore = function (_EventEmitter) {
 }(EventEmitter);
 
 var postProcessor = {
-
   processors: {},
 
   addPostProcessor: function addPostProcessor(module) {
@@ -11170,9 +11185,8 @@ var Translator = function (_EventEmitter) {
     if (!options) options = {};
 
     // non valid keys handling
-    if (keys === undefined || keys === null || keys === '') return '';
-    if (typeof keys === 'number') keys = String(keys);
-    if (typeof keys === 'string') keys = [keys];
+    if (keys === undefined || keys === null) return '';
+    if (!Array.isArray(keys)) keys = [String(keys)];
 
     // separators
     var keySeparator = options.keySeparator !== undefined ? options.keySeparator : this.options.keySeparator;
@@ -11704,7 +11718,7 @@ var PluralResolver = function () {
         if (suffix === 1) return '';
         if (typeof suffix === 'number') return '_plural_' + suffix.toString();
         return returnSuffix();
-      } else if ( /* v2 */this.options.compatibilityJSON === 'v2' && rule.numbers.length === 2 && rule.numbers[0] === 1) {
+      } else if ( /* v2 */this.options.compatibilityJSON === 'v2') {
         return returnSuffix();
       } else if ( /* v3 - gettext index */this.options.simplifyPluralSuffix && rule.numbers.length === 2 && rule.numbers[0] === 1) {
         return returnSuffix();
@@ -11827,7 +11841,7 @@ var Interpolator = function () {
       value = handleFormat(match[1].trim());
       if (value === undefined) {
         if (typeof missingInterpolationHandler === 'function') {
-          var temp = missingInterpolationHandler(str, match);
+          var temp = missingInterpolationHandler(str, match, options);
           value = typeof temp === 'string' ? temp : '';
         } else {
           this.logger.warn('missed to pass in variable ' + match[1] + ' for interpolating ' + str);
@@ -12120,7 +12134,9 @@ var Connector = function (_EventEmitter) {
     var options = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
 
     if (this.backend && this.backend.create) {
-      this.backend.create(languages, namespace, key, fallbackValue, null /* unused callback */, _extends({}, options, { isUpdate: isUpdate }));
+      this.backend.create(languages, namespace, key, fallbackValue, null /* unused callback */, _extends({}, options, {
+        isUpdate: isUpdate
+      }));
     }
 
     // write to store to avoid resending
@@ -12171,8 +12187,15 @@ function get$1() {
     appendNamespaceToCIMode: false,
     overloadTranslationOptionHandler: function handle(args) {
       var ret = {};
-      if (args[1]) ret.defaultValue = args[1];
-      if (args[2]) ret.tDescription = args[2];
+      if (_typeof(args[1]) === 'object') ret = args[1];
+      if (typeof args[1] === 'string') ret.defaultValue = args[1];
+      if (typeof args[2] === 'string') ret.tDescription = args[2];
+      if (_typeof(args[2]) === 'object' || _typeof(args[3]) === 'object') {
+        var options = args[3] || args[2];
+        Object.keys(options).forEach(function (key) {
+          ret[key] = options[key];
+        });
+      }
       return ret;
     },
     interpolation: {
@@ -12231,10 +12254,13 @@ var I18n = function (_EventEmitter) {
     _this.modules = { external: [] };
 
     if (callback && !_this.isInitialized && !options.isClone) {
-      var _ret;
-
       // https://github.com/i18next/i18next/issues/879
-      if (!_this.options.initImmediate) return _ret = _this.init(options, callback), possibleConstructorReturn(_this, _ret);
+      if (!_this.options.initImmediate) {
+        var _ret;
+
+        _this.init(options, callback);
+        return _ret = _this, possibleConstructorReturn(_this, _ret);
+      }
       setTimeout(function () {
         _this.init(options, callback);
       }, 0);
@@ -12278,7 +12304,11 @@ var I18n = function (_EventEmitter) {
       s.logger = baseLogger;
       s.resourceStore = this.store;
       s.languageUtils = lu;
-      s.pluralResolver = new PluralResolver(lu, { prepend: this.options.pluralSeparator, compatibilityJSON: this.options.compatibilityJSON, simplifyPluralSuffix: this.options.simplifyPluralSuffix });
+      s.pluralResolver = new PluralResolver(lu, {
+        prepend: this.options.pluralSeparator,
+        compatibilityJSON: this.options.compatibilityJSON,
+        simplifyPluralSuffix: this.options.simplifyPluralSuffix
+      });
       s.interpolator = new Interpolator(this.options);
 
       s.backendConnector = new Connector(createClassOnDemand(this.modules.backend), s.resourceStore, s, this.options);
@@ -12326,12 +12356,15 @@ var I18n = function (_EventEmitter) {
       };
     });
 
+    var deferred = defer();
+
     var load = function load() {
       _this2.changeLanguage(_this2.options.lng, function (err, t) {
         _this2.isInitialized = true;
         _this2.logger.log('initialized', _this2.options);
         _this2.emit('initialized', _this2.options);
 
+        deferred.resolve(t); // not rejecting on err (as err is only a loading translation failed warning)
         callback(err, t);
       });
     };
@@ -12342,7 +12375,7 @@ var I18n = function (_EventEmitter) {
       setTimeout(load, 0);
     }
 
-    return this;
+    return deferred;
   };
 
   /* eslint consistent-return: 0 */
@@ -12389,10 +12422,15 @@ var I18n = function (_EventEmitter) {
   };
 
   I18n.prototype.reloadResources = function reloadResources(lngs, ns, callback) {
+    var deferred = defer();
     if (!lngs) lngs = this.languages;
     if (!ns) ns = this.options.ns;
-    if (!callback) callback = function callback() {};
-    this.services.backendConnector.reload(lngs, ns, callback);
+    if (!callback) callback = noop;
+    this.services.backendConnector.reload(lngs, ns, function () {
+      deferred.resolve();
+      callback(null);
+    });
+    return deferred;
   };
 
   I18n.prototype.use = function use(module) {
@@ -12426,6 +12464,8 @@ var I18n = function (_EventEmitter) {
   I18n.prototype.changeLanguage = function changeLanguage(lng, callback) {
     var _this4 = this;
 
+    var deferred = defer();
+
     var done = function done(err, l) {
       _this4.translator.changeLanguage(l);
 
@@ -12434,6 +12474,9 @@ var I18n = function (_EventEmitter) {
         _this4.logger.log('languageChanged', l);
       }
 
+      deferred.resolve(function () {
+        return _this4.t.apply(_this4, arguments);
+      });
       if (callback) callback(err, function () {
         return _this4.t.apply(_this4, arguments);
       });
@@ -12460,6 +12503,8 @@ var I18n = function (_EventEmitter) {
     } else {
       setLng(lng);
     }
+
+    return deferred;
   };
 
   I18n.prototype.getFixedT = function getFixedT(lng, ns) {
@@ -12508,17 +12553,29 @@ var I18n = function (_EventEmitter) {
   I18n.prototype.loadNamespaces = function loadNamespaces(ns, callback) {
     var _this6 = this;
 
-    if (!this.options.ns) return callback && callback();
+    var deferred = defer();
+
+    if (!this.options.ns) {
+      callback && callback();
+      return Promise.resolve();
+    }
     if (typeof ns === 'string') ns = [ns];
 
     ns.forEach(function (n) {
       if (_this6.options.ns.indexOf(n) < 0) _this6.options.ns.push(n);
     });
 
-    this.loadResources(callback);
+    this.loadResources(function (err) {
+      deferred.resolve();
+      if (callback) callback(err);
+    });
+
+    return deferred;
   };
 
   I18n.prototype.loadLanguages = function loadLanguages(lngs, callback) {
+    var deferred = defer();
+
     if (typeof lngs === 'string') lngs = [lngs];
     var preloaded = this.options.preload || [];
 
@@ -12526,10 +12583,18 @@ var I18n = function (_EventEmitter) {
       return preloaded.indexOf(lng) < 0;
     });
     // Exit early if all given languages are already preloaded
-    if (!newLngs.length) return callback();
+    if (!newLngs.length) {
+      if (callback) callback();
+      return Promise.resolve();
+    }
 
     this.options.preload = preloaded.concat(newLngs);
-    this.loadResources(callback);
+    this.loadResources(function (err) {
+      deferred.resolve();
+      if (callback) callback(err);
+    });
+
+    return deferred;
   };
 
   I18n.prototype.dir = function dir(lng) {
