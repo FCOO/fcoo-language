@@ -8,7 +8,7 @@
 
 ****************************************************************************/
 
-(function ($, window/*, document, undefined*/) {
+(function ($, i18next, window/*, document, undefined*/) {
     "use strict";
 
     //Create fcoo-namespace
@@ -181,4 +181,4 @@
     ns.settings.set('language', language );
 
 
-}(jQuery, this, document));
+}(jQuery, this.i18next, this, document));
