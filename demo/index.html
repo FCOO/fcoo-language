@@ -9,7 +9,9 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
-  <link  href="../src/fcoo-language.css" rel="stylesheet">
+    <link  href="css/all.css" rel="stylesheet">
+    <link  href="bower_components.css" rel="stylesheet">
+    <link  href="../src/fcoo-language.css" rel="stylesheet">
 	<style>
 		div.big {
 			display:inline-block;
@@ -36,19 +38,22 @@
 
     <hr>
 
-    <ul class="nav">
+    <ul class="menu_list">
         <li><a href="#" data-i18n="[title]nav:home;nav:home" data-i18n-options="{lng:'da'}"></a></li>
         <li><a href="#" data-i18n="nav:page1"></a></li>
         <li><a href="#" data-i18n="nav:page2"></a></li>
         <li><a href="#" data-i18n="nav:da_and_se"></a></li>
         <li><a href="#" data-i18n="nav:position" data-i18n-options='{"count": 19}'></a></li>
-        <li><a href="#" onclick="fcoo.settings.set( 'language', i18next.language == 'en' ? 'da' : 'en', false);" data-i18n="nav:change"></a></li>
+        <li><a href="#" onclick="fcoo.globalSetting.save({language: i18next.language == 'en' ? 'da' : 'en'});" data-i18n="nav:change"></a></li>
     </ul>
 
 
 	<script src="bower_components.js"></script>
 	<script src="../src/fcoo-language.js"></script>
 	<script>
+        window.bsIsTouch = false;
+        window.bsIsTouch = (window.location.search =='?touch');
+
 		//var langFlag = new window.LangFlag();
 		var h = $('#flag');
         $.each( ['dk', 'fo', 'gl'], function( index, flag ){
@@ -80,13 +85,13 @@
         i18next.addPhrase("This is fallback value", {no:"Dette er på dansk"});
         //console.log(i18next.t("This is fallback value"));
     $(function() {
-        var li = $('<li>').prependTo( $('.nav') );
+        var li = $('<li>').prependTo( $('.menu_list') );
         $('<a href="#"/>')
             .i18n('nav:position', {count:123})
             .i18n('nav:firstpage', 'title')
             .appendTo(li);
 
-        li = $('<li>').prependTo( $('.nav') );
+        li = $('<li>').prependTo( $('.menu_list') );
         $('<a href="#"/>')
 //            .i18n({da:'i18n() På dansk', en:'i18n() In English'})
             .i18n('{"da":"i18n() På dansk", "en":"i18n() In English"}')
@@ -94,6 +99,12 @@
 
     });
 
-	</script>
+
+    $('body').on('contextmenu', function(){
+        fcoo.globalSetting.edit(fcoo.events.LANGUAGECHANGED);
+        return false;
+    });
+
+    </script>
 </body>
 </html>

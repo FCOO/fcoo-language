@@ -22,7 +22,7 @@
     // All available languages.
     // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
     //******************************************************************************
-    var languages = ['da', 'en',  'fo', 'kl' /*', de', 'sv', 'no'*/];
+    var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
     //******************************************************************************
 
     var standardLanguage  = 'en',                     //Standard language is allways english (en)
@@ -103,22 +103,22 @@
     /***********************************************************
     Set up and load language via fcoo.settings
     ***********************************************************/
-    ns.settings.add({
+    ns.globalSetting.add({
         id          : 'language',
         validator   : validateLanguage,
-        applyFunc   : function( lang ){ setLanguageAndLanguage2( lang, ns.settings.get('language2') ); },
+        applyFunc   : function( lang ){ setLanguageAndLanguage2( lang, ns.globalSetting.get('language2') ); },
         defaultValue: defaultLanguage,
         callApply   : false
     });
 
     //language used when initialize i18next
-    var language = ns.settings.get( 'language' );
+    var language = ns.globalSetting.get( 'language' );
 
 
     /***********************************************************
     Set up and load language2 via fcoo.settings
     ***********************************************************/
-    ns.settings.add({
+    ns.globalSetting.add({
         id          : 'language2',
         validator   : validateLanguage,
         applyFunc   : function( lang2 ){ setLanguageAndLanguage2( i18next.language, lang2 ); },
@@ -128,7 +128,54 @@
 
 
     //fallback used when initialize i18next
-    var fallbackLng = getFallbackLng( language, ns.settings.get('language2') );
+    var fallbackLng = getFallbackLng( language, ns.globalSetting.get('language2') );
+
+
+
+    /***********************************************************
+    Craete modal-content for Ininialize i18next
+    ***********************************************************/
+    var items = [];
+    //Create i18next-record for all avaiable languages
+    $.each({
+        da: {da:'Dansk', en:'Danish'},
+        en: {da:'Engelsk', en:'English'},
+        fo: {da:'Færøsk', en:'Faroese', fo:'Føroyskt'},
+        kl: {da:'Grønlandsk', en:'Greenlandic', kl:'Kalaallisut'},
+        de: {da:'Tysk', en:'German', de:'Deutsch'},
+        sv: {da:'Svensk', en:'Swedish', sv:'Svenska'},
+        no: {da:'Norsk', en:'Norwegian', no:'Norsk'}
+    },
+    function(langId, langText){
+        if (validateLanguage(langId))
+            items.push({
+                id   :langId,
+                icon: "fa fa-lang-"+langId,
+                text: [langText[langId], '/', {da: langText.da, en:langText.en}]
+            });
+    });
+
+
+    var content = [{
+            id  :'language',
+            type: 'selectlist',
+            items: items,
+        }];
+    if (languages.length > 2)
+        content.push({
+            id  :'language2',
+            type: 'select',
+            label: {da:'Alternativt sprog', en:'Alternative language'},
+            items:[
+                {id:'da', icon: "fa fa-lang-da", text:'Dansk'},
+                {id:'en', icon: "fa fa-lang-en", text:'English'},
+            ],
+            hideWhen: {
+                'language': ['da','en']
+            }
+        });
+    ns.globalSetting.addModalContent(languagechanged, content);
+
 
     /***********************************************************
     Ininialize i18next
@@ -178,7 +225,7 @@
 */
 
     //Update all language related elements
-    ns.settings.set('language', language );
+    ns.globalSetting.set({'language': language} );
 
 
 }(jQuery, this.i18next, this, document));
