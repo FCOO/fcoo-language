@@ -1,6 +1,6 @@
 {
   "name": "fcoo-language",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "homepage": "https://github.com/FCOO/fcoo-language",
   "authors": [
     "Niels Holt nho@fcoo.dk"
@@ -40,45 +40,5 @@
   ],
   "moduleType": [
     "es6"
-  ],
-  "overrides": {
-    "bootstrap-select": {
-      "main": [
-        "dist/js/bootstrap-select.js"
-      ]
-    },
-    "jquery.scrollbar": {
-      "main": [
-        "jquery.scrollbar.js"
-      ]
-    },
-    "bootstrap": {
-      "dependencies": {
-        "jquery": "latest"
-      },
-      "main": [
-        "dist/js/bootstrap.bundle.js"
-      ]
-    },
-    "inputmask": {
-      "main": [
-        "dist/jquery.inputmask.bundle.js"
-      ]
-    },
-    "js-url": {
-      "main": [
-        "dist/url.min.js"
-      ]
-    },
-    "perfect-scrollbar": {
-      "main": [
-        "dist/perfect-scrollbar.js",
-        "css/perfect-scrollbar.css"
-      ]
-    }
-  },
-  "resolutions": {
-    "bootstrap": "^4.0.0",
-    "i18next-phrases": "^2.0.0"
-  }
+  ]
 }
