@@ -104,11 +104,12 @@
     Set up and load language via fcoo.settings
     ***********************************************************/
     ns.globalSetting.add({
-        id          : 'language',
-        validator   : validateLanguage,
-        applyFunc   : function( lang ){ setLanguageAndLanguage2( lang, ns.globalSetting.get('language2') ); },
-        defaultValue: defaultLanguage,
-        callApply   : false
+        id            : 'language',
+        validator     : validateLanguage,
+        applyFunc     : function( lang ){ setLanguageAndLanguage2( lang, ns.globalSetting.get('language2') ); },
+        defaultValue  : defaultLanguage,
+        callApply     : false,
+        saveOnChanging: true
     });
 
     //language used when initialize i18next
@@ -119,11 +120,12 @@
     Set up and load language2 via fcoo.settings
     ***********************************************************/
     ns.globalSetting.add({
-        id          : 'language2',
-        validator   : validateLanguage,
-        applyFunc   : function( lang2 ){ setLanguageAndLanguage2( i18next.language, lang2 ); },
-        defaultValue: standardLanguage,
-        callApply   : false
+        id            : 'language2',
+        validator     : validateLanguage,
+        applyFunc     : function( lang2 ){ setLanguageAndLanguage2( i18next.language, lang2 ); },
+        defaultValue  : standardLanguage,
+        callApply     : false,
+        saveOnChanging: true
     });
 
 
