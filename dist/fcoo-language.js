@@ -109,7 +109,8 @@
         applyFunc     : function( lang ){ setLanguageAndLanguage2( lang, ns.globalSetting.get('language2') ); },
         defaultValue  : defaultLanguage,
         callApply     : false,
-        saveOnChanging: true
+        saveOnChanging: true,
+        globalEvents  : ns.events.LANGUAGECHANGED
     });
 
     //language used when initialize i18next
@@ -125,7 +126,8 @@
         applyFunc     : function( lang2 ){ setLanguageAndLanguage2( i18next.language, lang2 ); },
         defaultValue  : standardLanguage,
         callApply     : false,
-        saveOnChanging: true
+        saveOnChanging: true,
+        globalEvents  : ns.events.LANGUAGECHANGED
     });
 
 
