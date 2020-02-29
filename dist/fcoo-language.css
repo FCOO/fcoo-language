@@ -69,15 +69,3 @@
 
 .lang-flag-icon-lang {
   font-family: daenfokldesvno; }
-
-html.lang2-da .hide-for-lang2-da {
-  display: none !important; }
-
-html.no-lang2-da .show-for-lang2-da {
-  display: none !important; }
-
-html.lang2-en .hide-for-lang2-en {
-  display: none !important; }
-
-html.no-lang2-en .show-for-lang2-en {
-  display: none !important; }

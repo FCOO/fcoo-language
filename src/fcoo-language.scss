@@ -61,10 +61,3 @@ $lang-list: (
 $lang-modernizr-list: ();
 
 @import "../bower_components/lang-flag-icon/src/lang-flag-icon";
-
-
-//If the primary selected language is not Danish or English, Danish or English must be selected as second language "lang2"
-//Create the Modernizr-classes for 'show-for-lang2-DA/EN' and 'hide-for-lang2-DA/EN' wher DA/EN = 'da' or 'en'
-@each $lang in (da, en) {
-	@include show-and-hide-for-modernizr-test( 'lang2-' + $lang , 'html', false, $lfi-display-value, $lfi-incl-table-display);
-}
