@@ -18,6 +18,10 @@
     //global events "languagechanged" fired when the language is changed
     var languagechanged = window.fcoo.events.LANGUAGECHANGED;
 
+    //dont_call_global_events = true => ns.events.fire( languagechanged ); is NOT called when language is changed
+    var dont_call_global_events = false;
+
+
     //*****************************************************************************
     // All available languages.
     // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
@@ -109,7 +113,12 @@
         applyFunc     : function( lang ){ setLanguageAndLanguage2( lang, ns.globalSetting.get('language2') ); },
         defaultValue  : defaultLanguage,
         callApply     : false,
-        saveOnChanging: true,
+        onChanging    : function( lang ){
+                            dont_call_global_events = true;
+                            i18next.changeLanguage(lang);
+                            ns.globalSetting.modalForm.$bsModal.localize();
+                            dont_call_global_events = false;
+                        },
         globalEvents  : ns.events.LANGUAGECHANGED
     });
 
@@ -126,7 +135,6 @@
         applyFunc     : function( lang2 ){ setLanguageAndLanguage2( i18next.language, lang2 ); },
         defaultValue  : standardLanguage,
         callApply     : false,
-        saveOnChanging: true,
         globalEvents  : ns.events.LANGUAGECHANGED
     });
 
@@ -201,7 +209,8 @@
     //To capture both language-change by fcoo.settings and by i18next direct
     //fire globalEvent LANGUAGECHENGED when language is changed via i18next
     i18next.on('languageChanged', function() {
-        ns.events.fire( languagechanged );
+        if (!dont_call_global_events)
+            ns.events.fire( languagechanged );
     });
 
     //Set modernizr-test and set all element when language changes

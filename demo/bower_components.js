@@ -55698,6 +55698,12 @@ module.exports = g;
 
         var result = $('<'+ options.tagName + ' tabindex="0"/>');
 
+        //title are added to the button instead of only to the <span> with the text
+        if (options.title){
+            result.i18n(options.title, 'title');
+            options.title = null;
+        }
+
         if (options.tagName == 'a'){
             if (options.link)
                 result
@@ -56604,6 +56610,21 @@ module.exports = g;
             $.each( this.inputs, function( id, input ){
                 func( input );
             });
+        },
+
+        /*******************************************************
+        getInput(id or userId)
+        *******************************************************/
+        getInput: function(id){
+            var result = this.inputs[id];
+            if (!result)
+                this._eachInput( function( input ){
+                    if (input.options.userId == id){
+                        result = input;
+                        return false;
+                    }
+                });
+            return result;
         },
 
         /*******************************************************
@@ -60383,12 +60404,11 @@ TODO:   truncate     : false. If true the column will be truncated. Normally onl
         return options;
     };
 
-    //$._bsAdjustOptions: Adjust options to allow text/name/title/header etc.
+    //$._bsAdjustOptions: Adjust options to allow text/name/header etc.
     $._bsAdjustOptions = function( options, defaultOptions, forceOptions ){
         //*********************************************************************
         //adjustContentOptions: Adjust options for the content of elements
         function adjustContentAndContextOptions( options, context ){
-            options.text      = options.text || options.title;
             options.iconClass = options.iconClass || options.iconClassName;
             options.textClass = options.textClass || options.textClassName;
 
@@ -60749,9 +60769,13 @@ TODO:   truncate     : false. If true the column will be truncated. Normally onl
             });
 
             //Add value-format content
-            $.each( vfValueArray, function( index, vfValue ){
+            $.each( vfFormatArray, function( index ){
                 $._bsCreateElement( 'span', linkArray[ index ], titleArray[ index ], textStyleArray[ index ], textClassArray[index] )
-                    .vfValueFormat( vfValue || '', vfFormatArray[index], vfOptionsArray[index] )
+                    .vfValueFormat(
+                        vfValueArray[index] || '',
+                        vfFormatArray[index],
+                        vfOptionsArray[index]
+                    )
                     .appendTo( _this );
             });
 
@@ -66629,6 +66653,7 @@ window.location.hash
                 setting.group = _this;
                 _this.settings[settingOptions.id] = setting;
                 setting.apply( _this.data[setting.options.id], !options.callApply );
+                _this.data[setting.options.id] = setting.value;
             });
         },
 
@@ -66790,7 +66815,6 @@ window.location.hash
             //Open accordion with id
             if (id)
                 this.modalForm.$bsModal.find('form > .accordion').bsOpenCard(id);
-
             this.modalForm.edit(data || this.data);
         },
 
@@ -66810,8 +66834,12 @@ window.location.hash
             //Set data during editing
             $.each(data, function(id, value){
                 var setting = _this.settings[id];
-                if (setting && setting.options.saveOnChanging && (_this.get(id) != value))
-                    newData[id] = value;
+                if (setting){
+                    if (setting.options.saveOnChanging && (_this.get(id) != value))
+                        newData[id] = value;
+                    if (setting.options.onChanging)
+                        setting.options.onChanging(value);
+                }
             });
             this.set(newData);
         },
@@ -66871,6 +66899,7 @@ window.location.hash
         globalEvents {String} = Id of global-events in fcoo.events that aare fired when the setting is changed
         onError [function( value, id )] (optional). Called if a new value is invalid according to validator
         saveOnChanging [BOOLEAN]. If true the setting is saved during editing. When false the setting is only saved when edit-form submits
+        onChanging [FUNCTION(value)]. Called when the value of the setting is changed during editing
         modernizr BOOLEAN` (optional) default=false: If true the modernizr-class descriped in `src\_fcoo-settings.scss` is updated
         modernizrOnlyValues []ID: List of the only values that are modernizr'ed. If empty all values are modernizr
 
@@ -66897,7 +66926,6 @@ window.location.hash
             var _this = this,
                 id = this.options.id;
             newValue = (newValue === undefined) ? this.options.defaultValue : newValue;
-
             if ( !window.Url.validateValue(''+newValue, this.options.validator) ){
                 if (this.options.onError)
                     this.options.onError( newValue, id );
@@ -66972,12 +67000,12 @@ window.location.hash
                 text: {da: 'Indstillinger', en:'Settings'}
             },
             accordionList: [
-                {id: ns.events.LANGUAGECHANGED,       header: {icon: 'fa-fw fa-comments',       text: {da: 'Sprog', en: 'Language'}} },
-                {id: ns.events.TIMEZONECHANGED,       header: {icon: 'fa-fw fa-globe',          text: {da: 'Tidszone', en: 'Time Zone'}} },
-                {id: ns.events.DATETIMEFORMATCHANGED, header: {icon: 'fa-fw fa-calendar-alt',   text: {da: 'Dato og klokkeslæt', en: 'Date and Time'}} },
-                {id: ns.events.LATLNGFORMATCHANGED,   header: {icon: 'fa-fw fa-map-marker-alt', text: {da: 'Positioner', en: 'Positions'}} },
-                {id: ns.events.UNITCHANGED,           header: {icon: 'fa-fw fa-ruler',          text: {da: 'Enheder', en: 'Units'}} },
-                {id: ns.events.NUMBERFORMATCHANGED,   header: {                                 text: ['12',{da: 'Talformat', en: 'Number Format'}]} },
+                {id: ns.events.LANGUAGECHANGED,       header: {icon: 'fa-comments',       iconClass: 'fa-fw', text: {da: 'Sprog', en: 'Language'}} },
+                {id: ns.events.TIMEZONECHANGED,       header: {icon: 'fa-globe',          iconClass: 'fa-fw', text: {da: 'Tidszone', en: 'Time Zone'}} },
+                {id: ns.events.DATETIMEFORMATCHANGED, header: {icon: 'fa-calendar-alt',   iconClass: 'fa-fw', text: {da: 'Dato og klokkeslæt', en: 'Date and Time'}} },
+                {id: ns.events.LATLNGFORMATCHANGED,   header: {icon: 'fa-map-marker-alt', iconClass: 'fa-fw', text: {da: 'Positioner', en: 'Positions'}} },
+                {id: ns.events.UNITCHANGED,           header: {icon: 'fa-ruler',          iconClass: 'fa-fw', text: {da: 'Enheder', en: 'Units'}} },
+                {id: ns.events.NUMBERFORMATCHANGED,   header: {                                               text: ['12',{da: 'Talformat', en: 'Number Format'}], textClass:['fa-fw', ''] } },
             ]
         });
 
