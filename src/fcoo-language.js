@@ -26,7 +26,8 @@
     // All available languages.
     // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
     //******************************************************************************
-    var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
+//HER    var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
+    var languages = ['da', 'en', 'fo', 'kl', 'de', 'sv', 'no'];
     //******************************************************************************
 
     var standardLanguage  = 'en',                     //Standard language is allways english (en)
@@ -143,6 +144,38 @@
     var fallbackLng = getFallbackLng( language, ns.globalSetting.get('language2') );
 
 
+    /***********************************************************
+    lang2flag: function(lang) return the flag/country id associated with language lang
+    ***********************************************************/
+    ns.lang2flag = function(lang){
+        var flag = lang;
+        switch (lang){
+            case 'da': flag = 'dk'; break; //Danish -> Denmark
+            case 'en': flag = 'gb'; break; //English -> UK
+            case 'kl': flag = 'gl'; break; //Kalaallisut/Greenlandic -> Greenland
+            case 'sv': flag = 'se'; break; //Swedish -> Sweden
+
+            //All other language has same code as country
+            //case 'fo': flag = 'fo'; break; //Faroese -> Faroe Islands
+            //case 'de': flag = 'de'; break; //German -> Germany
+            //case 'no': flag = 'no'; break; //Norwegian -> Norway
+        }
+        return flag;
+    };
+
+    /***********************************************************
+    flag2FlagClass: function(flag)
+    ***********************************************************/
+    ns.flag2FlagClass = function(flag, isIcon){
+        return (isIcon ? 'fa ' : '') + 'fa-flag-'+flag;
+    };
+
+    /***********************************************************
+    lang2FlagClass: function(lang) return the flag/country id associated with language lang
+    ***********************************************************/
+    ns.lang2FlagClass = function(lang, isIcon){
+        return ns.flag2FlagClass(ns.lang2flag(lang), isIcon);
+    };
 
     /***********************************************************
     Craete modal-content for Ininialize i18next
@@ -162,7 +195,7 @@
         if (validateLanguage(langId))
             items.push({
                 id   :langId,
-                icon: "fa fa-lang-"+langId,
+                icon: ns.lang2FlagClass(langId, true),
                 text: [langText[langId], '/', {da: langText.da, en:langText.en}]
             });
     });
@@ -179,12 +212,13 @@
             type: 'select',
             label: {da:'Alternativt sprog', en:'Alternative language'},
             items:[
-                {id:'da', icon: "fa fa-lang-da", text:'Dansk'},
-                {id:'en', icon: "fa fa-lang-en", text:'English'},
+                {id:'da', icon: ns.lang2FlagClass('da'), text: {da:'Dansk', en:'Danish'}},
+                {id:'en', icon: ns.lang2FlagClass('en'), text: {da:'Engelsk', en:'English'}},
             ],
             hideWhen: {
                 'language': ['da','en']
-            }
+            },
+            lineBefore: true,
         });
     ns.globalSetting.addModalContent(languagechanged, content);
 

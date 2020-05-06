@@ -11,7 +11,6 @@
 
     <link  href="css/all.css" rel="stylesheet">
     <link  href="bower_components.css" rel="stylesheet">
-    <link  href="../src/fcoo-language.css" rel="stylesheet">
 	<style>
 		div.big {
 			display:inline-block;
@@ -25,16 +24,10 @@
 
 
 <body>
-    <h2 class="show-for-lang-da">Sprog</h2>
-    <h2 class="show-for-lang-en">Language</h2>
-        <div class="big fa-lang-da show-for-lang-da"></div>
-        <div class="big fa-lang-en show-for-lang-en"></div>
-	<hr>
-
-    <h2 id="flag">Installed flags (fa-flag-XX)</h2>
+    <h2 id="flag">Flags</h2>
 
 	<hr>
-	<h2 id="lang">Installed lang (fa-lang-YY)</h2>
+	<h2 id="lang">Language</h2>
 
     <hr>
 
@@ -54,14 +47,13 @@
         window.bsIsTouch = false;
         window.bsIsTouch = (window.location.search =='?touch');
 
-		//var langFlag = new window.LangFlag();
 		var h = $('#flag');
         $.each( ['dk', 'fo', 'gl'], function( index, flag ){
-			$('<div title="flag='+flag+'" class="big fa-flag-'+flag+'"></div>').insertAfter( h );
+			$('<div title="flag='+flag+'" class="big '+ fcoo.flag2FlagClass(flag) +'"></div>').insertAfter( h );
 		});
 		var h = $('#lang');
         $.each( ['da', 'en', 'fo', 'kl'], function( index, lang ){
-			$('<div title="lang='+lang+'" class="big fa-lang-'+lang+'"></div>').insertAfter( h );
+			$('<div title="lang='+lang+'" class="big ' + fcoo.lang2FlagClass(lang) +'"></div>').insertAfter( h );
 		});
 
         i18next
