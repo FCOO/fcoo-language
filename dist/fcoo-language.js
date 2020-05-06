@@ -26,8 +26,7 @@
     // All available languages.
     // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
     //******************************************************************************
-//HER    var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
-    var languages = ['da', 'en', 'fo', 'kl', 'de', 'sv', 'no'];
+    var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
     //******************************************************************************
 
     var standardLanguage  = 'en',                     //Standard language is allways english (en)
