@@ -163,6 +163,25 @@
     };
 
     /***********************************************************
+    country2lang or flag2lang: function(flag) return the language id associated with country flag
+    ***********************************************************/
+    ns.country2lang = ns.flag2lang = function(flag){
+        var lang = flag;
+        switch (flag){
+            case 'dk': lang = 'da'; break; //Denmark -> Danish
+            case 'gb':
+            case 'us': lang = 'en'; break; //English -> UK, USA -> English TODO: Add other english-speaking countries
+            case 'gl': lang = 'kl'; break; //Greenland -> Kalaallisut/Greenlandic
+            case 'se': lang = 'sv'; break; //Sweden -> Swedish
+
+            //All other country has same code as language (I hope!)
+        }
+        return lang;
+    };
+
+
+
+    /***********************************************************
     flag2FlagClass: function(flag)
     ***********************************************************/
     ns.flag2FlagClass = function(flag, isIcon){
