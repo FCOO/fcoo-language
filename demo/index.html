@@ -36,6 +36,8 @@
         <li><a href="#" data-i18n="nav:page1"></a></li>
         <li><a href="#" data-i18n="nav:page2"></a></li>
         <li><a href="#" data-i18n="nav:da_and_se"></a></li>
+        <li><a href="#" data-i18n="name:fcoo"></a></li>
+        <li><a href="#" data-i18n="name:dmi"></a></li>
         <li><a href="#" data-i18n="nav:position" data-i18n-options='{"count": 19}'></a></li>
         <li><a href="#" onclick="fcoo.globalSetting.save({language: i18next.language == 'en' ? 'da' : 'en'});" data-i18n="nav:change"></a></li>
     </ul>
@@ -43,7 +45,10 @@
 
 	<script src="bower_components.js"></script>
 	<script src="../src/fcoo-language.js"></script>
+	<script src="../src/load-phrases.js"></script>
+	<script src="../src/name-abbr-link-email.js"></script>
 	<script>
+        Promise.defaultErrorHandler = function(error){console.log('ERROR', error); };
         window.bsIsTouch = false;
         window.bsIsTouch = (window.location.search =='?touch');
 
@@ -89,6 +94,22 @@
             .i18n('{"da":"i18n() På dansk", "en":"i18n() In English"}')
             .appendTo(li);
 
+
+        fcoo.loadKeyPhraseFile('name-address-link.json',      'name-address-link');
+        fcoo.loadKeyPhraseFile('name-address-link_fcoo.json', 'name-address-link');
+
+        fcoo.promiseList.appendLast({
+            data   : {},
+            resolve: function(){
+                fcoo.globalSetting.load();
+        $.i18nEMail('fcoo').appendTo($('body'));
+        $.i18nLink('fcoo').appendTo($('body'));
+
+
+            }
+        });
+
+        fcoo.promiseList.getAll();
     });
 
 

@@ -7,11 +7,23 @@
 
 >i18next, CSS, JS-objects and interface to select language and translate text used by FCOO web applications
 
+1. Description
+2. Installation
+3. Demo
+4. Namespace `window.fcoo`
+5. [i18next]
+6. Standard FCOO [i18next] Namespaces
+7. [i18next] plugins
+8. New jQuery prototype methods
+9. `lang-flag-icon`
+
+
+
 
 ## Description
 FCOOs applications using [i18next] to translate.
 
-This package includes set-up for [i18next] and other packages with css and JavaScript object to set language, icons and [Modernizr] tests.
+This package includes set-up for [i18next] and other packages with css and JavaScript object to set language, icons, [Modernizr] tests, and load of json-files with phrases in different formats
 
 ## Installation
 ### bower
@@ -23,7 +35,7 @@ http://FCOO.github.io/fcoo-language/demo/
 Show list of all installed `flag-icon-XX` and `lang-icon-YY`
 
 
-## name-space `window.fcoo`
+## Namespace `window.fcoo`
 All JavaScript objects are create in the name space `window.fcoo`
 
 ## [i18next]
@@ -48,10 +60,6 @@ To change witch language that are available:
 	)
 
 All translations, phrases etc. MUST always at least be available in Danish or English (but not necessarily in both)
-
-
-
-
 
 ### Selected language
 `fcoo-language` will load selected language via [fcoo-settings](https://github.com/FCOO/fcoo-settings) or set a default language
@@ -86,17 +94,6 @@ This makes it possible to use `"."` in keys eq. `link:fcoo.dk`
 	i18next.t( "button:ok" ); 	//key="ok", namespace="button"
 	i18next.t( "sealevel" );	//Key="sealevel", namespace=default
 
-#### FCOO namespaces
-The following namespaces are recommended to use:
-- `link`: The link-address to a home-page. Use the address as key. Eq. key = `link:dmi.dk`, translation `da:"http://dmi.dk"`, `en:"http://dmi.dk/en"`
-- `button`: Standard text to buttons. `button:close = {da: "Luk", en:"Close"}`
-- `unit`: Physical units: Eq. `unit:metre = {da:"meter", en:"metre"}`
-- `name`: Full name of institutions or organisations. Use national abbreviation as key and include name in national language. Eq. key = `name:bsh`, translation `en:"Federal Maritime and Hydrographic Agency", de:"Bundesamt für Seeschifffahrt und Hydrographie"`
-
-
-
-
-
 ### Adding translation
 #### Default i18n structure
 Default 1-dim json-structure for i18next is 
@@ -112,7 +109,6 @@ Using the following methods to add translations
 
 	i18next.addResource(lng, ns, key, value, options) //Adds one key/value.
 	i18next.addResources(lng, ns, resources) //Adds multiple key/values. 
-
 
 #### Additional structure
 To make adding translation easier a new format is supported: 
@@ -204,6 +200,28 @@ Would give the following translations
 	i18next.t('keyWithCount', {count: 100}); // output: '100 items'
 
 
+## Standard FCOO [i18next] Namespaces
+
+The following namespaces are used to provide abbreviation (abbr), name, link and e-mail for different institutions, organisations, standards, models etc. :
+
+- `abbr`: The national abbreviation of institutes, organisations, models etc. Only needed if $.i18nLink if `key.toUpperCase` is different from abbr. E.g. 
+  - if key = `'fcoo'` and abbr = `'FCOO'` => no need for 'abbr:fcoo'
+  - if key = `'abcd'` and abbr = `'abcd'` or `'A.B.C.D.'` => abbr needed
+- `name`: Full name of institutions or organisations. Use national abbreviation as key and include name in national language. Eq. key = `name:bsh`, translation `en:"Federal Maritime and Hydrographic Agency", de:"Bundesamt für Seeschifffahrt und Hydrographie"`
+- `link`: The link-address to a home-page. Use the abbreviation as key. Eq. key = `link:dmi`, translation `da:"http://dmi.dk"`, `en:"http://dmi.dk/en"`
+- `email`, the official e-mail-address of the institution/organisation 
+
+### Loading phrases-files via `fcoo.promiseList`
+	 
+    fcoo.loadKeyPhraseFile(fileName[, subDir]) OR ({fileName, subDir})
+    //Loads a key-phrase-files = { key: { namespace1: {..}, namespace2:{...} }*N }.
+    
+    fcoo.loadPhraseFile(fileName[, subDir]) OR ({fileName, subDir})
+    //Loads a phrase-files = { namespace: { key1: {..}, key2:{...} }*N }.
+
+
+
+
 ## i18next plugins
 
 ### [i18next-intervalplural-postprocessor]
@@ -245,10 +263,10 @@ To add or update the `data-i18n` properties of elements a new methods is defined
     $.fn.i18n( htmlOrKeyOrPhrase[, attribute][, options] )
 
 Were `htmlOrKeyOrPhrase` = 
+
 - simple html-string OR 
 - i18next-key OR 
-- a phrase-object (see langValue in i18next.addPhrase)
-- 
+- a phrase-object (see langValue in i18next.addPhrase) 
 
 that set or update `data-i18n="[attribute]key` and `data-i18n-options="options stringified"`
 
@@ -261,8 +279,8 @@ that set or update `data-i18n="[attribute]key` and `data-i18n-options="options s
 
 
 
-----------
 
+----------
 ##  [lang-flag-icon]
 The following classes is included.
 
