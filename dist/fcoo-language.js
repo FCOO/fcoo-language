@@ -248,7 +248,7 @@
         lng         : language,
         fallbackLng : fallbackLng,
         keySeparator: '#',
-
+        languages   : languages,
         useDataAttrOptions: true,
         initImmediate     : false, //prevents resource loading in init function inside setTimeout (default async behaviour)
         resources         : {},    //Empty bagend
