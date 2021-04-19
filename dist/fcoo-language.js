@@ -144,6 +144,22 @@
 
 
     /***********************************************************
+    ajdustLangName: function(name: STRING or {LANG: STRING})
+    Return {LANG: STRING} for all language based on available values in name
+    ***********************************************************/
+    ns.ajdustLangName = function(name){
+        var result = {},
+            defaultName = typeof name == 'string' ? name : (name['en'] || name['da']);
+
+        $.each(i18next.options.languages || i18next.languages, function(index, lang){
+            result[lang] = result[lang] || defaultName;
+        });
+
+        return result;
+    };
+
+
+    /***********************************************************
     lang2flag: function(lang) return the flag/country id associated with language lang
     ***********************************************************/
     ns.lang2flag = function(lang){
