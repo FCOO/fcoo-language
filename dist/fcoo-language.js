@@ -148,13 +148,12 @@
     Return {LANG: STRING} for all language based on available values in name
     ***********************************************************/
     ns.ajdustLangName = function(name){
-        var result = {},
-            defaultName = typeof name == 'string' ? name : (name['en'] || name['da']);
+        var result = typeof name == 'string' ? {en: name} : name,
+            defaultName = result['en'] || result['da'];
 
-        $.each(i18next.options.languages || i18next.languages, function(index, lang){
+        $.each(languages, function(index, lang){
             result[lang] = result[lang] || defaultName;
         });
-
         return result;
     };
 
