@@ -1,6 +1,6 @@
 {
   "name": "fcoo-language",
-  "version": "7.1.1",
+  "version": "7.1.2",
   "homepage": "https://github.com/FCOO/fcoo-language",
   "authors": [
     "Niels Holt nho@fcoo.dk"
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "jquery": "latest",
-    "i18next": "^19.0.0",
-    "i18next-intervalplural-postprocessor": "^2.0.0",
+    "i18next": "^20.0.0",
+    "i18next-intervalplural-postprocessor": "^3.0.0",
     "fcoo-global-events": "fcoo/fcoo-global-events#latest",
     "fcoo-settings": "fcoo/fcoo-settings#latest",
     "fcoo-promise-list": "fcoo/fcoo-promise-list#latest",
