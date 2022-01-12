@@ -273,6 +273,14 @@
     i18next.use( window.i18nextIntervalPluralPostProcessor );
 
 
+    /*
+    NOTE
+    According to https://www.i18next.com/overview/api#resolvedlanguage
+    i18next.resolvedLanguage should be as browserLanguage
+    but it has not been tested
+    */
+
+
     //To capture both language-change by fcoo.settings and by i18next direct
     //fire globalEvent LANGUAGECHENGED when language is changed via i18next
     i18next.on('languageChanged', function() {
