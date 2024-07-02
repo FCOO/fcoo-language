@@ -27,6 +27,7 @@
     // **NOTE ** THIS LIST MUST MATCH THE LIST $lang-list IN src/fcoo-language.scss
     //******************************************************************************
     var languages = ['da', 'en'/*, 'fo', 'kl', 'de', 'sv', 'no'*/];
+    //var languages = ['da', 'en', 'fo', 'kl', 'de', 'sv', 'no'];
     //******************************************************************************
 
     var standardLanguage  = 'en',                     //Standard language is allways english (en)
@@ -213,9 +214,8 @@
     /***********************************************************
     Craete modal-content for Ininialize i18next
     ***********************************************************/
-    var items = [];
-    //Create i18next-record for all avaiable languages
-    $.each({
+    let items = [];
+    const langs = {
         da: {da:'Dansk', en:'Danish'},
         en: {da:'Engelsk', en:'English'},
         fo: {da:'Færøsk', en:'Faroese', fo:'Føroyskt'},
@@ -223,14 +223,27 @@
         de: {da:'Tysk', en:'German', de:'Deutsch'},
         sv: {da:'Svensk', en:'Swedish', sv:'Svenska'},
         no: {da:'Norsk', en:'Norwegian', no:'Norsk'}
-    },
-    function(langId, langText){
-        if (validateLanguage(langId))
-            items.push({
-                id   :langId,
-                icon: ns.lang2FlagClass(langId, true),
-                text: [langText[langId], '/', {da: langText.da, en:langText.en}]
+    }
+
+    //Create i18next-record for all available languages = language-name in own language + (language-name in current language or English (if different from own name))
+    $.each(langs, (langId, langText) => {
+        if (validateLanguage(langId)){
+            let textOwnLang = langText[langId], //The language in its own language
+                textCur     = {};               //The language in current selected language
+
+            $.each(langText, (id, langTextAlt) => {
+                if (langTextAlt != textOwnLang)
+                   textCur[id] = '(' +langTextAlt+ ')';
+                else
+                    textCur[id] = ' ';
             });
+
+            items.push({
+                id  : langId,
+                icon: ns.lang2FlagClass(langId, true),
+                text: [textOwnLang, textCur]
+            });
+        }
     });
 
 
