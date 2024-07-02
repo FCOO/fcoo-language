@@ -223,7 +223,7 @@
         de: {da:'Tysk', en:'German', de:'Deutsch'},
         sv: {da:'Svensk', en:'Swedish', sv:'Svenska'},
         no: {da:'Norsk', en:'Norwegian', no:'Norsk'}
-    }
+    };
 
     //Create i18next-record for all available languages = language-name in own language + (language-name in current language or English (if different from own name))
     $.each(langs, (langId, langText) => {
