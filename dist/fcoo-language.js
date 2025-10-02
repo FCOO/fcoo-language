@@ -152,12 +152,25 @@
         var result = typeof name == 'string' ? {en: name} : name,
             defaultName = result['en'] || result['da'];
 
-        $.each(languages, function(index, lang){
-            result[lang] = result[lang] || defaultName;
-        });
+        languages.forEach( lang => result[lang] = result[lang] || defaultName );
         return result;
     };
 
+
+    /***********************************************************
+    combineLang: function(nameList: []{LANG: STRING}, separator)
+    Create a combined {LANG: STRING} based on nameList
+    ***********************************************************/
+    ns.combineLang = ns.combineLangName = function(nameList, seperator = ' '){
+        let result = {},
+            sepLang = ns.ajdustLangName(seperator);
+        nameList.forEach( (name, index) => {
+            let nextName = ns.ajdustLangName(name);
+            languages.forEach( lang => result[lang] = (result[lang] || '') + (index ? sepLang[lang] : '') + nextName[lang] );
+        });
+
+        return result;
+    };
 
     /***********************************************************
     lang2flag: function(lang) return the flag/country id associated with language lang
@@ -304,10 +317,7 @@
     //Set modernizr-test and set all element when language changes
     ns.events.on( languagechanged, function() {
         var $html = $('html');
-        $.each( languages, function( index, lang ){
-            $html.modernizrToggle('lang-'+lang, lang == i18next.language);
-        });
-
+        languages.forEach( lang => $html.modernizrToggle('lang-'+lang, lang == i18next.language) );
         $("*").localize();
     });
 
