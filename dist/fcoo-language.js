@@ -291,9 +291,9 @@
         keySeparator: '#',
         languages   : languages,
         useDataAttrOptions: true,
-        initImmediate     : false, //prevents resource loading in init function inside setTimeout (default async behaviour)
+        initImmediate     : false, //v23: Prevents resource loading in init function inside setTimeout (default async behaviour)
+        //initAsync         : false, //v24: Triggers resource loading in init() inside a setTimeout (default async behaviour). Set it to false if your backend loads resources synchronously - that way, calling i18next.t() after init() is possible without relying on the initialization callback. This option only works for sync (blocking) loading backend, like i18next-fs-backend!
         resources         : {},    //Empty bagend
-
         //debug: true,
     });
     i18next.use( window.i18nextIntervalPluralPostProcessor );

@@ -44,6 +44,32 @@ All JavaScript objects are create in the name space `window.fcoo`
 It supports many different structure of organizing data and translations.
 To unify and simplify the translation of text in FCOOs applications, the following options, structure, and methods are used and recommended.
 
+### Version
+The version of [i18next] used in this packages **must be 23**.
+
+This is due to the version of JSON that are used.
+In version 23 JSON-format `"v3"` is used, but version 24 and higher the format `"v4"` is used.
+
+The different is regarding naming keys for singular and plural 
+
+    //Version "v3":
+    {
+        someKey     : 'normal',
+        different   : 'normal two',
+        myKey       : 'singular key',
+        myKey_plural: 'plural key'
+    }
+
+    //Version `"v4"`:
+    {
+        someKey    : 'normal',
+        different  : 'normal two',
+        myKey_one  : 'singular key',
+        myKey_other: 'plural key'
+    }
+
+But since the `"_plural"` is used in many FCOO-packages, it is not possible for now to used higher version 23.
+
 ### Available language
 
 To change witch language that are available:

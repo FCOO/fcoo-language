@@ -39,7 +39,7 @@
         <li><a href="#" data-i18n="name:fcoo"></a></li>
         <li><a href="#" data-i18n="name:dmi"></a></li>
         <li><a href="#" data-i18n="nav:position" data-i18n-options='{"count": 19}'></a></li>
-        <li><a href="#" onclick="fcoo.globalSetting.save({language: i18next.language == 'en' ? 'da' : 'en'});" data-i18n="nav:change"></a></li>
+        <li><a href="#" onclick="console.log(123); fcoo.globalSetting.save({language: i18next.language == 'en' ? 'da' : 'en'});" data-i18n="nav:change"></a></li>
     </ul>
 
 
@@ -85,7 +85,6 @@
         var li = $('<li>').prependTo( $('.menu_list') );
         $('<a href="#"/>')
             .i18n('nav:position', {count:123})
-            .i18n('nav:firstpage', 'title')
             .appendTo(li);
 
         li = $('<li>').prependTo( $('.menu_list') );
