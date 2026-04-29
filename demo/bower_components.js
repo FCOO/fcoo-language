@@ -35869,6 +35869,7 @@ window.xmlToJSON = function(xml) {
                     options.format = options.format ? options.format.toUpperCase() : 'JSON';
                     switch (options.format){
                         case 'JSON' : get = window.Promise.getJSON; break;
+                        case 'YAML' : get = window.Promise.getYAML; break;
                         case 'XML'  : get = window.Promise.getXML; break;
                         default     : get = window.Promise.getText; break;
                     }
@@ -36153,10 +36154,10 @@ window.xmlToJSON = function(xml) {
   }
 
   /*!
-   * GSAP 3.14.2
+   * GSAP 3.15.0
    * https://gsap.com
    *
-   * @license Copyright 2008-2025, GreenSock. All rights reserved.
+   * @license Copyright 2008-2026, GreenSock. All rights reserved.
    * Subject to the terms at https://gsap.com/standard-license
    * @author: Jack Doyle, jack@greensock.com
   */
@@ -37491,27 +37492,6 @@ window.xmlToJSON = function(xml) {
       return 1 - ease(1 - p);
     };
   },
-      _propagateYoyoEase = function _propagateYoyoEase(timeline, isYoyo) {
-    var child = timeline._first,
-        ease;
-
-    while (child) {
-      if (child instanceof Timeline) {
-        _propagateYoyoEase(child, isYoyo);
-      } else if (child.vars.yoyoEase && (!child._yoyo || !child._repeat) && child._yoyo !== isYoyo) {
-        if (child.timeline) {
-          _propagateYoyoEase(child.timeline, isYoyo);
-        } else {
-          ease = child._ease;
-          child._ease = child._yEase;
-          child._yEase = ease;
-          child._yoyo = isYoyo;
-        }
-      }
-
-      child = child._next;
-    }
-  },
       _parseEase = function _parseEase(ease, defaultEase) {
     return !ease ? defaultEase : (_isFunction(ease) ? ease : _easeMap[ease] || _configEaseFromString(ease)) || defaultEase;
   },
@@ -38188,8 +38168,6 @@ window.xmlToJSON = function(xml) {
             if (!this._ts && !prevPaused) {
               return this;
             }
-
-            _propagateYoyoEase(this, isYoyo);
           }
         }
 
@@ -38203,7 +38181,7 @@ window.xmlToJSON = function(xml) {
 
         this._tTime = tTime;
         this._time = time;
-        this._act = !timeScale;
+        this._act = !!timeScale;
 
         if (!this._initted) {
           this._onUpdate = this.vars.onUpdate;
@@ -38826,6 +38804,7 @@ window.xmlToJSON = function(xml) {
         fullTargets = parent && parent.data === "nested" ? parent.vars.targets : targets,
         autoOverwrite = tween._overwrite === "auto" && !_suppressOverwrites,
         tl = tween.timeline,
+        reverseEase = vars.easeReverse || yoyoEase,
         cleanVars,
         i,
         p,
@@ -38841,15 +38820,9 @@ window.xmlToJSON = function(xml) {
         overwritten;
     tl && (!keyframes || !ease) && (ease = "none");
     tween._ease = _parseEase(ease, _defaults.ease);
-    tween._yEase = yoyoEase ? _invertEase(_parseEase(yoyoEase === true ? ease : yoyoEase, _defaults.ease)) : 0;
-
-    if (yoyoEase && tween._yoyo && !tween._repeat) {
-      yoyoEase = tween._yEase;
-      tween._yEase = tween._ease;
-      tween._ease = yoyoEase;
-    }
-
+    tween._rEase = reverseEase && (_parseEase(reverseEase) || tween._ease);
     tween._from = !tl && !!vars.runBackwards;
+    if (tween._from) tween.ratio = 1;
 
     if (!tl || keyframes && !vars.stagger) {
       harness = targets[0] ? _getCache(targets[0]).harness : 0;
@@ -38997,7 +38970,7 @@ window.xmlToJSON = function(xml) {
           _initTween(tween, time);
 
           _forceAllPropTweens = 0;
-          return skipRecursion ? _warn(property + " not eligible for reset") : 1;
+          return skipRecursion ? _warn(property + " not eligible for reset. Try splitting into individual properties") : 1;
         }
 
         ptCache.push(pt);
@@ -39070,7 +39043,7 @@ window.xmlToJSON = function(xml) {
       _parseFuncOrString = function _parseFuncOrString(value, tween, i, target, targets) {
     return _isFunction(value) ? value.call(tween, i, target, targets) : _isString(value) && ~value.indexOf("random(") ? _replaceRandom(value) : value;
   },
-      _staggerTweenProps = _callbackNames + "repeat,repeatDelay,yoyo,repeatRefresh,yoyoEase,autoRevert",
+      _staggerTweenProps = _callbackNames + "repeat,repeatDelay,yoyo,repeatRefresh,yoyoEase,easeReverse,autoRevert",
       _staggerPropsToSkip = {};
 
   _forEachName(_staggerTweenProps + ",id,stagger,delay,duration,paused,scrollTrigger", function (name) {
@@ -39099,7 +39072,6 @@ window.xmlToJSON = function(xml) {
           keyframes = _this3$vars.keyframes,
           defaults = _this3$vars.defaults,
           scrollTrigger = _this3$vars.scrollTrigger,
-          yoyoEase = _this3$vars.yoyoEase,
           parent = vars.parent || _globalTimeline,
           parsedTargets = (_isArray(targets) || _isTypedArray(targets) ? _isNumber(targets[0]) : "length" in vars) ? [targets] : toArray(targets),
           tl,
@@ -39116,6 +39088,7 @@ window.xmlToJSON = function(xml) {
 
       if (keyframes || stagger || _isFuncOrString(duration) || _isFuncOrString(delay)) {
         vars = _this3.vars;
+        var easeReverse = vars.easeReverse || vars.yoyoEase;
         tl = _this3.timeline = new Timeline({
           data: "nested",
           defaults: defaults || {},
@@ -39141,7 +39114,7 @@ window.xmlToJSON = function(xml) {
           for (i = 0; i < l; i++) {
             copy = _copyExcluding(vars, _staggerPropsToSkip);
             copy.stagger = 0;
-            yoyoEase && (copy.yoyoEase = yoyoEase);
+            easeReverse && (copy.easeReverse = easeReverse);
             staggerVarsToMerge && _merge(copy, staggerVarsToMerge);
             curTarget = parsedTargets[i];
             copy.duration = +_parseFuncOrString(duration, _assertThisInitialized(_this3), i, curTarget, parsedTargets);
@@ -39248,8 +39221,7 @@ window.xmlToJSON = function(xml) {
           prevIteration,
           isYoyo,
           ratio,
-          timeline,
-          yoyoEase;
+          timeline;
 
       if (!dur) {
         _renderZeroDurationTween(this, totalTime, suppressEvents, force);
@@ -39282,12 +39254,7 @@ window.xmlToJSON = function(xml) {
           }
 
           isYoyo = this._yoyo && iteration & 1;
-
-          if (isYoyo) {
-            yoyoEase = this._yEase;
-            time = dur - time;
-          }
-
+          if (isYoyo) time = dur - time;
           prevIteration = _animationCycle(this._tTime, cycleDuration);
 
           if (time === prevTime && !force && this._initted && iteration === prevIteration) {
@@ -39296,8 +39263,6 @@ window.xmlToJSON = function(xml) {
           }
 
           if (iteration !== prevIteration) {
-            timeline && this._yEase && _propagateYoyoEase(timeline, isYoyo);
-
             if (this.vars.repeatRefresh && !isYoyo && !this._lock && time !== cycleDuration && this._initted) {
               this._lock = force = 1;
               this.render(_roundPrecise(cycleDuration * iteration), true).invalidate()._lock = 0;
@@ -39320,18 +39285,32 @@ window.xmlToJSON = function(xml) {
           }
         }
 
+        if (this._rEase) {
+          var inv = time < prevTime;
+
+          if (inv !== this._inv) {
+            var segDur = inv ? prevTime : dur - prevTime;
+            this._inv = inv;
+            if (this._from) this.ratio = 1 - this.ratio;
+            this._invRatio = this.ratio;
+            this._invTime = prevTime;
+            this._invRecip = segDur ? (inv ? -1 : 1) / segDur : 0;
+            this._invScale = inv ? -this.ratio : 1 - this.ratio;
+            this._invEase = inv ? this._rEase : this._ease;
+          }
+
+          this.ratio = ratio = this._invRatio + this._invScale * this._invEase((time - this._invTime) * this._invRecip);
+        } else {
+          this.ratio = ratio = this._ease(time / dur);
+        }
+
+        if (this._from) this.ratio = ratio = 1 - ratio;
         this._tTime = tTime;
         this._time = time;
 
         if (!this._act && this._ts) {
           this._act = 1;
           this._lazy = 0;
-        }
-
-        this.ratio = ratio = (yoyoEase || this._ease)(time / dur);
-
-        if (this._from) {
-          this.ratio = ratio = 1 - ratio;
         }
 
         if (!prevTime && tTime && !suppressEvents && !prevIteration) {
@@ -39692,7 +39671,7 @@ window.xmlToJSON = function(xml) {
     return PropTween;
   }();
 
-  _forEachName(_callbackNames + "parent,duration,ease,delay,overwrite,runBackwards,startAt,yoyo,immediateRender,repeat,repeatDelay,data,paused,reversed,lazy,callbackScope,stringFilter,id,yoyoEase,stagger,inherit,repeatRefresh,keyframes,autoRevert,scrollTrigger", function (name) {
+  _forEachName(_callbackNames + "parent,duration,ease,delay,overwrite,runBackwards,startAt,yoyo,immediateRender,repeat,repeatDelay,data,paused,reversed,lazy,callbackScope,stringFilter,id,yoyoEase,stagger,inherit,repeatRefresh,keyframes,autoRevert,scrollTrigger,easeReverse", function (name) {
     return _reservedProps[name] = 1;
   });
 
@@ -40284,7 +40263,7 @@ window.xmlToJSON = function(xml) {
       }
     }
   }, _buildModifierPlugin("roundProps", _roundModifier), _buildModifierPlugin("modifiers"), _buildModifierPlugin("snap", snap)) || _gsap;
-  Tween.version = Timeline.version = gsap.version = "3.14.2";
+  Tween.version = Timeline.version = gsap.version = "3.15.0";
   _coreReady = 1;
   _windowExists() && _wake();
   var Power0 = _easeMap.Power0,
@@ -41991,7 +41970,7 @@ window.xmlToJSON = function(xml) {
       e = `${p[p.length - 1]}.${e}`;
       p = p.slice(0, p.length - 1);
       last = getLastOfPath(object, p, Object);
-      if (last?.obj && typeof last.obj[`${last.k}.${e}`] !== 'undefined') {
+      if (last && last.obj && typeof last.obj[`${last.k}.${e}`] !== 'undefined') {
         last.obj = undefined;
       }
     }
@@ -42011,7 +41990,6 @@ window.xmlToJSON = function(xml) {
       k
     } = getLastOfPath(object, path);
     if (!obj) return undefined;
-    if (!Object.prototype.hasOwnProperty.call(obj, k)) return undefined;
     return obj[k];
   };
   const getPathWithDefaults = (data, defaultData, key) => {
@@ -42092,10 +42070,7 @@ window.xmlToJSON = function(xml) {
   const deepFind = function (obj, path) {
     let keySeparator = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '.';
     if (!obj) return undefined;
-    if (obj[path]) {
-      if (!Object.prototype.hasOwnProperty.call(obj, path)) return undefined;
-      return obj[path];
-    }
+    if (obj[path]) return obj[path];
     const tokens = path.split(keySeparator);
     let current = obj;
     for (let i = 0; i < tokens.length;) {
@@ -42122,7 +42097,7 @@ window.xmlToJSON = function(xml) {
     }
     return current;
   };
-  const getCleanedCode = code => code?.replace('_', '-');
+  const getCleanedCode = code => code && code.replace('_', '-');
 
   const consoleLogger = {
     type: 'logger',
@@ -42136,7 +42111,7 @@ window.xmlToJSON = function(xml) {
       this.output('error', args);
     },
     output(type, args) {
-      console?.[type]?.apply?.(console, args);
+      if (console && console[type]) console[type].apply(console, args);
     }
   };
   class Logger {
@@ -42294,7 +42269,7 @@ window.xmlToJSON = function(xml) {
         key = path.slice(2).join('.');
       }
       if (result || !ignoreJSONStructure || !isString(key)) return result;
-      return deepFind(this.data?.[lng]?.[ns], key, keySeparator);
+      return deepFind(this.data && this.data[lng] && this.data[lng][ns], key, keySeparator);
     }
     addResource(lng, ns, key, value) {
       let options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
@@ -42361,6 +42336,10 @@ window.xmlToJSON = function(xml) {
     }
     getResourceBundle(lng, ns) {
       if (!ns) ns = this.options.defaultNS;
+      if (this.options.compatibilityAPI === 'v1') return {
+        ...{},
+        ...this.getResource(lng, ns)
+      };
       return this.getResource(lng, ns);
     }
     getDataByLanguage(lng) {
@@ -42383,14 +42362,13 @@ window.xmlToJSON = function(xml) {
     },
     handle(processors, value, key, options, translator) {
       processors.forEach(processor => {
-        value = this.processors[processor]?.process(value, key, options, translator) ?? value;
+        if (this.processors[processor]) value = this.processors[processor].process(value, key, options, translator);
       });
       return value;
     }
   };
 
   const checkedLoadedFor = {};
-  const shouldHandleAsObject = res => !isString(res) && typeof res !== 'boolean' && typeof res !== 'number';
   class Translator extends EventEmitter {
     constructor(services) {
       let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -42409,11 +42387,11 @@ window.xmlToJSON = function(xml) {
       let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
         interpolation: {}
       };
-      if (key == null) {
+      if (key === undefined || key === null) {
         return false;
       }
       const resolved = this.resolve(key, options);
-      return resolved?.res !== undefined;
+      return resolved && resolved.res !== undefined;
     }
     extractFromKey(key, options) {
       let nsSeparator = options.nsSeparator !== undefined ? options.nsSeparator : this.options.nsSeparator;
@@ -42447,7 +42425,7 @@ window.xmlToJSON = function(xml) {
         ...options
       };
       if (!options) options = {};
-      if (keys == null) return '';
+      if (keys === undefined || keys === null) return '';
       if (!Array.isArray(keys)) keys = [String(keys)];
       const returnDetails = options.returnDetails !== undefined ? options.returnDetails : this.options.returnDetails;
       const keySeparator = options.keySeparator !== undefined ? options.keySeparator : this.options.keySeparator;
@@ -42458,7 +42436,7 @@ window.xmlToJSON = function(xml) {
       const namespace = namespaces[namespaces.length - 1];
       const lng = options.lng || this.language;
       const appendNamespaceToCIMode = options.appendNamespaceToCIMode || this.options.appendNamespaceToCIMode;
-      if (lng?.toLowerCase() === 'cimode') {
+      if (lng && lng.toLowerCase() === 'cimode') {
         if (appendNamespaceToCIMode) {
           const nsSeparator = options.nsSeparator || this.options.nsSeparator;
           if (returnDetails) {
@@ -42486,32 +42464,20 @@ window.xmlToJSON = function(xml) {
         return key;
       }
       const resolved = this.resolve(keys, options);
-      let res = resolved?.res;
-      const resUsedKey = resolved?.usedKey || key;
-      const resExactUsedKey = resolved?.exactUsedKey || key;
+      let res = resolved && resolved.res;
+      const resUsedKey = resolved && resolved.usedKey || key;
+      const resExactUsedKey = resolved && resolved.exactUsedKey || key;
+      const resType = Object.prototype.toString.apply(res);
       const noObject = ['[object Number]', '[object Function]', '[object RegExp]'];
       const joinArrays = options.joinArrays !== undefined ? options.joinArrays : this.options.joinArrays;
       const handleAsObjectInI18nFormat = !this.i18nFormat || this.i18nFormat.handleAsObject;
-      const needsPluralHandling = options.count !== undefined && !isString(options.count);
-      const hasDefaultValue = Translator.hasDefaultValue(options);
-      const defaultValueSuffix = needsPluralHandling ? this.pluralResolver.getSuffix(lng, options.count, options) : '';
-      const defaultValueSuffixOrdinalFallback = options.ordinal && needsPluralHandling ? this.pluralResolver.getSuffix(lng, options.count, {
-        ordinal: false
-      }) : '';
-      const needsZeroSuffixLookup = needsPluralHandling && !options.ordinal && options.count === 0;
-      const defaultValue = needsZeroSuffixLookup && options[`defaultValue${this.options.pluralSeparator}zero`] || options[`defaultValue${defaultValueSuffix}`] || options[`defaultValue${defaultValueSuffixOrdinalFallback}`] || options.defaultValue;
-      let resForObjHndl = res;
-      if (handleAsObjectInI18nFormat && !res && hasDefaultValue) {
-        resForObjHndl = defaultValue;
-      }
-      const handleAsObject = shouldHandleAsObject(resForObjHndl);
-      const resType = Object.prototype.toString.apply(resForObjHndl);
-      if (handleAsObjectInI18nFormat && resForObjHndl && handleAsObject && noObject.indexOf(resType) < 0 && !(isString(joinArrays) && Array.isArray(resForObjHndl))) {
+      const handleAsObject = !isString(res) && typeof res !== 'boolean' && typeof res !== 'number';
+      if (handleAsObjectInI18nFormat && res && handleAsObject && noObject.indexOf(resType) < 0 && !(isString(joinArrays) && Array.isArray(res))) {
         if (!options.returnObjects && !this.options.returnObjects) {
           if (!this.options.returnedObjectHandler) {
             this.logger.warn('accessing an object - but returnObjects options is not enabled!');
           }
-          const r = this.options.returnedObjectHandler ? this.options.returnedObjectHandler(resUsedKey, resForObjHndl, {
+          const r = this.options.returnedObjectHandler ? this.options.returnedObjectHandler(resUsedKey, res, {
             ...options,
             ns: namespaces
           }) : `key '${key} (${this.language})' returned an object instead of string.`;
@@ -42523,31 +42489,20 @@ window.xmlToJSON = function(xml) {
           return r;
         }
         if (keySeparator) {
-          const resTypeIsArray = Array.isArray(resForObjHndl);
+          const resTypeIsArray = Array.isArray(res);
           const copy = resTypeIsArray ? [] : {};
           const newKeyToUse = resTypeIsArray ? resExactUsedKey : resUsedKey;
-          for (const m in resForObjHndl) {
-            if (Object.prototype.hasOwnProperty.call(resForObjHndl, m)) {
+          for (const m in res) {
+            if (Object.prototype.hasOwnProperty.call(res, m)) {
               const deepKey = `${newKeyToUse}${keySeparator}${m}`;
-              if (hasDefaultValue && !res) {
-                copy[m] = this.translate(deepKey, {
-                  ...options,
-                  defaultValue: shouldHandleAsObject(defaultValue) ? defaultValue[m] : undefined,
-                  ...{
-                    joinArrays: false,
-                    ns: namespaces
-                  }
-                });
-              } else {
-                copy[m] = this.translate(deepKey, {
-                  ...options,
-                  ...{
-                    joinArrays: false,
-                    ns: namespaces
-                  }
-                });
-              }
-              if (copy[m] === deepKey) copy[m] = resForObjHndl[m];
+              copy[m] = this.translate(deepKey, {
+                ...options,
+                ...{
+                  joinArrays: false,
+                  ns: namespaces
+                }
+              });
+              if (copy[m] === deepKey) copy[m] = res[m];
             }
           }
           res = copy;
@@ -42558,6 +42513,14 @@ window.xmlToJSON = function(xml) {
       } else {
         let usedDefault = false;
         let usedKey = false;
+        const needsPluralHandling = options.count !== undefined && !isString(options.count);
+        const hasDefaultValue = Translator.hasDefaultValue(options);
+        const defaultValueSuffix = needsPluralHandling ? this.pluralResolver.getSuffix(lng, options.count, options) : '';
+        const defaultValueSuffixOrdinalFallback = options.ordinal && needsPluralHandling ? this.pluralResolver.getSuffix(lng, options.count, {
+          ordinal: false
+        }) : '';
+        const needsZeroSuffixLookup = needsPluralHandling && !options.ordinal && options.count === 0 && this.pluralResolver.shouldUseIntlApi();
+        const defaultValue = needsZeroSuffixLookup && options[`defaultValue${this.options.pluralSeparator}zero`] || options[`defaultValue${defaultValueSuffix}`] || options[`defaultValue${defaultValueSuffixOrdinalFallback}`] || options.defaultValue;
         if (!this.isValidLookup(res) && hasDefaultValue) {
           usedDefault = true;
           res = defaultValue;
@@ -42593,7 +42556,7 @@ window.xmlToJSON = function(xml) {
             const defaultForMissing = hasDefaultValue && specificDefaultValue !== res ? specificDefaultValue : resForMissing;
             if (this.options.missingKeyHandler) {
               this.options.missingKeyHandler(l, namespace, k, defaultForMissing, updateMissing, options);
-            } else if (this.backendConnector?.saveMissing) {
+            } else if (this.backendConnector && this.backendConnector.saveMissing) {
               this.backendConnector.saveMissing(l, namespace, k, defaultForMissing, updateMissing, options);
             }
             this.emit('missingKey', l, namespace, k, res);
@@ -42617,7 +42580,11 @@ window.xmlToJSON = function(xml) {
         res = this.extendTranslation(res, keys, options, resolved, lastKey);
         if (usedKey && res === key && this.options.appendNamespaceToMissingKey) res = `${namespace}:${key}`;
         if ((usedKey || usedDefault) && this.options.parseMissingKeyHandler) {
-          res = this.options.parseMissingKeyHandler(this.options.appendNamespaceToMissingKey ? `${namespace}:${key}` : key, usedDefault ? res : undefined);
+          if (this.options.compatibilityAPI !== 'v1') {
+            res = this.options.parseMissingKeyHandler(this.options.appendNamespaceToMissingKey ? `${namespace}:${key}` : key, usedDefault ? res : undefined);
+          } else {
+            res = this.options.parseMissingKeyHandler(res);
+          }
         }
       }
       if (returnDetails) {
@@ -42629,7 +42596,7 @@ window.xmlToJSON = function(xml) {
     }
     extendTranslation(res, key, options, resolved, lastKey) {
       var _this = this;
-      if (this.i18nFormat?.parse) {
+      if (this.i18nFormat && this.i18nFormat.parse) {
         res = this.i18nFormat.parse(res, {
           ...this.options.interpolation.defaultVariables,
           ...options
@@ -42646,7 +42613,7 @@ window.xmlToJSON = function(xml) {
             }
           }
         });
-        const skipOnVariables = isString(res) && (options?.interpolation?.skipOnVariables !== undefined ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables);
+        const skipOnVariables = isString(res) && (options && options.interpolation && options.interpolation.skipOnVariables !== undefined ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables);
         let nestBef;
         if (skipOnVariables) {
           const nb = res.match(this.interpolator.nestingRegexp);
@@ -42663,12 +42630,12 @@ window.xmlToJSON = function(xml) {
           const nestAft = na && na.length;
           if (nestBef < nestAft) options.nest = false;
         }
-        if (!options.lng && resolved && resolved.res) options.lng = this.language || resolved.usedLng;
+        if (!options.lng && this.options.compatibilityAPI !== 'v1' && resolved && resolved.res) options.lng = this.language || resolved.usedLng;
         if (options.nest !== false) res = this.interpolator.nest(res, function () {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-          if (lastKey?.[0] === args[0] && !options.context) {
+          if (lastKey && lastKey[0] === args[0] && !options.context) {
             _this.logger.warn(`It seems you are nesting recursively key: ${args[0]} in key: ${key[0]}`);
             return null;
           }
@@ -42678,7 +42645,7 @@ window.xmlToJSON = function(xml) {
       }
       const postProcess = options.postProcess || this.options.postProcess;
       const postProcessorNames = isString(postProcess) ? [postProcess] : postProcess;
-      if (res != null && postProcessorNames?.length && options.applyPostProcessor !== false) {
+      if (res !== undefined && res !== null && postProcessorNames && postProcessorNames.length && options.applyPostProcessor !== false) {
         res = postProcessor.handle(postProcessorNames, res, key, this.options && this.options.postProcessPassResolved ? {
           i18nResolved: {
             ...resolved,
@@ -42705,13 +42672,13 @@ window.xmlToJSON = function(xml) {
         let namespaces = extracted.namespaces;
         if (this.options.fallbackNS) namespaces = namespaces.concat(this.options.fallbackNS);
         const needsPluralHandling = options.count !== undefined && !isString(options.count);
-        const needsZeroSuffixLookup = needsPluralHandling && !options.ordinal && options.count === 0;
+        const needsZeroSuffixLookup = needsPluralHandling && !options.ordinal && options.count === 0 && this.pluralResolver.shouldUseIntlApi();
         const needsContextHandling = options.context !== undefined && (isString(options.context) || typeof options.context === 'number') && options.context !== '';
         const codes = options.lngs ? options.lngs : this.languageUtils.toResolveHierarchy(options.lng || this.language, options.fallbackLng);
         namespaces.forEach(ns => {
           if (this.isValidLookup(found)) return;
           usedNS = ns;
-          if (!checkedLoadedFor[`${codes[0]}-${ns}`] && this.utils?.hasLoadedNamespace && !this.utils?.hasLoadedNamespace(usedNS)) {
+          if (!checkedLoadedFor[`${codes[0]}-${ns}`] && this.utils && this.utils.hasLoadedNamespace && !this.utils.hasLoadedNamespace(usedNS)) {
             checkedLoadedFor[`${codes[0]}-${ns}`] = true;
             this.logger.warn(`key "${usedKey}" for languages "${codes.join(', ')}" won't get resolved as namespace "${usedNS}" was not yet loaded`, 'This means something IS WRONG in your setup. You access the t function before i18next.init / i18next.loadNamespace / i18next.changeLanguage was done. Wait for the callback or Promise to resolve before accessing it!!!');
           }
@@ -42719,7 +42686,7 @@ window.xmlToJSON = function(xml) {
             if (this.isValidLookup(found)) return;
             usedLng = code;
             const finalKeys = [key];
-            if (this.i18nFormat?.addLookupKeys) {
+            if (this.i18nFormat && this.i18nFormat.addLookupKeys) {
               this.i18nFormat.addLookupKeys(finalKeys, key, code, ns, options);
             } else {
               let pluralSuffix;
@@ -42772,7 +42739,7 @@ window.xmlToJSON = function(xml) {
     }
     getResource(code, ns, key) {
       let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-      if (this.i18nFormat?.getResource) return this.i18nFormat.getResource(code, ns, key, options);
+      if (this.i18nFormat && this.i18nFormat.getResource) return this.i18nFormat.getResource(code, ns, key, options);
       return this.resourceStore.getResource(code, ns, key, options);
     }
     getUsedParamsDetails() {
@@ -42810,6 +42777,7 @@ window.xmlToJSON = function(xml) {
     }
   }
 
+  const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
   class LanguageUtil {
     constructor(options) {
       this.options = options;
@@ -42833,18 +42801,31 @@ window.xmlToJSON = function(xml) {
     }
     formatLanguageCode(code) {
       if (isString(code) && code.indexOf('-') > -1) {
-        let formattedCode;
-        try {
-          formattedCode = Intl.getCanonicalLocales(code)[0];
-        } catch (e) {}
-        if (formattedCode && this.options.lowerCaseLng) {
-          formattedCode = formattedCode.toLowerCase();
+        if (typeof Intl !== 'undefined' && typeof Intl.getCanonicalLocales !== 'undefined') {
+          try {
+            let formattedCode = Intl.getCanonicalLocales(code)[0];
+            if (formattedCode && this.options.lowerCaseLng) {
+              formattedCode = formattedCode.toLowerCase();
+            }
+            if (formattedCode) return formattedCode;
+          } catch (e) {}
         }
-        if (formattedCode) return formattedCode;
+        const specialCases = ['hans', 'hant', 'latn', 'cyrl', 'cans', 'mong', 'arab'];
+        let p = code.split('-');
         if (this.options.lowerCaseLng) {
-          return code.toLowerCase();
+          p = p.map(part => part.toLowerCase());
+        } else if (p.length === 2) {
+          p[0] = p[0].toLowerCase();
+          p[1] = p[1].toUpperCase();
+          if (specialCases.indexOf(p[1].toLowerCase()) > -1) p[1] = capitalize(p[1].toLowerCase());
+        } else if (p.length === 3) {
+          p[0] = p[0].toLowerCase();
+          if (p[1].length === 2) p[1] = p[1].toUpperCase();
+          if (p[0] !== 'sgn' && p[2].length === 2) p[2] = p[2].toUpperCase();
+          if (specialCases.indexOf(p[1].toLowerCase()) > -1) p[1] = capitalize(p[1].toLowerCase());
+          if (specialCases.indexOf(p[2].toLowerCase()) > -1) p[2] = capitalize(p[2].toLowerCase());
         }
-        return code;
+        return p.join('-');
       }
       return this.options.cleanCode || this.options.lowerCaseLng ? code.toLowerCase() : code;
     }
@@ -42916,6 +42897,125 @@ window.xmlToJSON = function(xml) {
     }
   }
 
+  let sets = [{
+    lngs: ['ach', 'ak', 'am', 'arn', 'br', 'fil', 'gun', 'ln', 'mfe', 'mg', 'mi', 'oc', 'pt', 'pt-BR', 'tg', 'tl', 'ti', 'tr', 'uz', 'wa'],
+    nr: [1, 2],
+    fc: 1
+  }, {
+    lngs: ['af', 'an', 'ast', 'az', 'bg', 'bn', 'ca', 'da', 'de', 'dev', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fi', 'fo', 'fur', 'fy', 'gl', 'gu', 'ha', 'hi', 'hu', 'hy', 'ia', 'it', 'kk', 'kn', 'ku', 'lb', 'mai', 'ml', 'mn', 'mr', 'nah', 'nap', 'nb', 'ne', 'nl', 'nn', 'no', 'nso', 'pa', 'pap', 'pms', 'ps', 'pt-PT', 'rm', 'sco', 'se', 'si', 'so', 'son', 'sq', 'sv', 'sw', 'ta', 'te', 'tk', 'ur', 'yo'],
+    nr: [1, 2],
+    fc: 2
+  }, {
+    lngs: ['ay', 'bo', 'cgg', 'fa', 'ht', 'id', 'ja', 'jbo', 'ka', 'km', 'ko', 'ky', 'lo', 'ms', 'sah', 'su', 'th', 'tt', 'ug', 'vi', 'wo', 'zh'],
+    nr: [1],
+    fc: 3
+  }, {
+    lngs: ['be', 'bs', 'cnr', 'dz', 'hr', 'ru', 'sr', 'uk'],
+    nr: [1, 2, 5],
+    fc: 4
+  }, {
+    lngs: ['ar'],
+    nr: [0, 1, 2, 3, 11, 100],
+    fc: 5
+  }, {
+    lngs: ['cs', 'sk'],
+    nr: [1, 2, 5],
+    fc: 6
+  }, {
+    lngs: ['csb', 'pl'],
+    nr: [1, 2, 5],
+    fc: 7
+  }, {
+    lngs: ['cy'],
+    nr: [1, 2, 3, 8],
+    fc: 8
+  }, {
+    lngs: ['fr'],
+    nr: [1, 2],
+    fc: 9
+  }, {
+    lngs: ['ga'],
+    nr: [1, 2, 3, 7, 11],
+    fc: 10
+  }, {
+    lngs: ['gd'],
+    nr: [1, 2, 3, 20],
+    fc: 11
+  }, {
+    lngs: ['is'],
+    nr: [1, 2],
+    fc: 12
+  }, {
+    lngs: ['jv'],
+    nr: [0, 1],
+    fc: 13
+  }, {
+    lngs: ['kw'],
+    nr: [1, 2, 3, 4],
+    fc: 14
+  }, {
+    lngs: ['lt'],
+    nr: [1, 2, 10],
+    fc: 15
+  }, {
+    lngs: ['lv'],
+    nr: [1, 2, 0],
+    fc: 16
+  }, {
+    lngs: ['mk'],
+    nr: [1, 2],
+    fc: 17
+  }, {
+    lngs: ['mnk'],
+    nr: [0, 1, 2],
+    fc: 18
+  }, {
+    lngs: ['mt'],
+    nr: [1, 2, 11, 20],
+    fc: 19
+  }, {
+    lngs: ['or'],
+    nr: [2, 1],
+    fc: 2
+  }, {
+    lngs: ['ro'],
+    nr: [1, 2, 20],
+    fc: 20
+  }, {
+    lngs: ['sl'],
+    nr: [5, 1, 2, 3],
+    fc: 21
+  }, {
+    lngs: ['he', 'iw'],
+    nr: [1, 2, 20, 21],
+    fc: 22
+  }];
+  let _rulesPluralsTypes = {
+    1: n => Number(n > 1),
+    2: n => Number(n != 1),
+    3: n => 0,
+    4: n => Number(n % 10 == 1 && n % 100 != 11 ? 0 : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 1 : 2),
+    5: n => Number(n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n % 100 >= 3 && n % 100 <= 10 ? 3 : n % 100 >= 11 ? 4 : 5),
+    6: n => Number(n == 1 ? 0 : n >= 2 && n <= 4 ? 1 : 2),
+    7: n => Number(n == 1 ? 0 : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 1 : 2),
+    8: n => Number(n == 1 ? 0 : n == 2 ? 1 : n != 8 && n != 11 ? 2 : 3),
+    9: n => Number(n >= 2),
+    10: n => Number(n == 1 ? 0 : n == 2 ? 1 : n < 7 ? 2 : n < 11 ? 3 : 4),
+    11: n => Number(n == 1 || n == 11 ? 0 : n == 2 || n == 12 ? 1 : n > 2 && n < 20 ? 2 : 3),
+    12: n => Number(n % 10 != 1 || n % 100 == 11),
+    13: n => Number(n !== 0),
+    14: n => Number(n == 1 ? 0 : n == 2 ? 1 : n == 3 ? 2 : 3),
+    15: n => Number(n % 10 == 1 && n % 100 != 11 ? 0 : n % 10 >= 2 && (n % 100 < 10 || n % 100 >= 20) ? 1 : 2),
+    16: n => Number(n % 10 == 1 && n % 100 != 11 ? 0 : n !== 0 ? 1 : 2),
+    17: n => Number(n == 1 || n % 10 == 1 && n % 100 != 11 ? 0 : 1),
+    18: n => Number(n == 0 ? 0 : n == 1 ? 1 : 2),
+    19: n => Number(n == 1 ? 0 : n == 0 || n % 100 > 1 && n % 100 < 11 ? 1 : n % 100 > 10 && n % 100 < 20 ? 2 : 3),
+    20: n => Number(n == 1 ? 0 : n == 0 || n % 100 > 0 && n % 100 < 20 ? 1 : 2),
+    21: n => Number(n % 100 == 1 ? 1 : n % 100 == 2 ? 2 : n % 100 == 3 || n % 100 == 4 ? 3 : 0),
+    22: n => Number(n == 1 ? 0 : n == 2 ? 1 : (n < 0 || n > 10) && n % 10 == 0 ? 2 : 3)
+  };
+  const nonIntlVersions = ['v1', 'v2', 'v3'];
+  const intlVersions = ['v4'];
   const suffixesOrder = {
     zero: 0,
     one: 1,
@@ -42924,11 +43024,17 @@ window.xmlToJSON = function(xml) {
     many: 4,
     other: 5
   };
-  const dummyRule = {
-    select: count => count === 1 ? 'one' : 'other',
-    resolvedOptions: () => ({
-      pluralCategories: ['one', 'other']
-    })
+  const createRules = () => {
+    const rules = {};
+    sets.forEach(set => {
+      set.lngs.forEach(l => {
+        rules[l] = {
+          numbers: set.nr,
+          plurals: _rulesPluralsTypes[set.fc]
+        };
+      });
+    });
+    return rules;
   };
   class PluralResolver {
     constructor(languageUtils) {
@@ -42936,6 +43042,11 @@ window.xmlToJSON = function(xml) {
       this.languageUtils = languageUtils;
       this.options = options;
       this.logger = baseLogger.create('pluralResolver');
+      if ((!this.options.compatibilityJSON || intlVersions.includes(this.options.compatibilityJSON)) && (typeof Intl === 'undefined' || !Intl.PluralRules)) {
+        this.options.compatibilityJSON = 'v3';
+        this.logger.error('Your environment seems not to be Intl API compatible, use an Intl.PluralRules polyfill. Will fallback to the compatibilityJSON v3 format handling.');
+      }
+      this.rules = createRules();
       this.pluralRulesCache = {};
     }
     addRule(lng, obj) {
@@ -42946,37 +43057,38 @@ window.xmlToJSON = function(xml) {
     }
     getRule(code) {
       let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      const cleanedCode = getCleanedCode(code === 'dev' ? 'en' : code);
-      const type = options.ordinal ? 'ordinal' : 'cardinal';
-      const cacheKey = JSON.stringify({
-        cleanedCode,
-        type
-      });
-      if (cacheKey in this.pluralRulesCache) {
-        return this.pluralRulesCache[cacheKey];
-      }
-      let rule;
-      try {
-        rule = new Intl.PluralRules(cleanedCode, {
+      if (this.shouldUseIntlApi()) {
+        const cleanedCode = getCleanedCode(code === 'dev' ? 'en' : code);
+        const type = options.ordinal ? 'ordinal' : 'cardinal';
+        const cacheKey = JSON.stringify({
+          cleanedCode,
           type
         });
-      } catch (err) {
-        if (!Intl) {
-          this.logger.error('No Intl support, please use an Intl polyfill!');
-          return dummyRule;
+        if (cacheKey in this.pluralRulesCache) {
+          return this.pluralRulesCache[cacheKey];
         }
-        if (!code.match(/-|_/)) return dummyRule;
-        const lngPart = this.languageUtils.getLanguagePartFromCode(code);
-        rule = this.getRule(lngPart, options);
+        let rule;
+        try {
+          rule = new Intl.PluralRules(cleanedCode, {
+            type
+          });
+        } catch (err) {
+          if (!code.match(/-|_/)) return;
+          const lngPart = this.languageUtils.getLanguagePartFromCode(code);
+          rule = this.getRule(lngPart, options);
+        }
+        this.pluralRulesCache[cacheKey] = rule;
+        return rule;
       }
-      this.pluralRulesCache[cacheKey] = rule;
-      return rule;
+      return this.rules[code] || this.rules[this.languageUtils.getLanguagePartFromCode(code)];
     }
     needsPlural(code) {
       let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      let rule = this.getRule(code, options);
-      if (!rule) rule = this.getRule('dev', options);
-      return rule?.resolvedOptions().pluralCategories.length > 1;
+      const rule = this.getRule(code, options);
+      if (this.shouldUseIntlApi()) {
+        return rule && rule.resolvedOptions().pluralCategories.length > 1;
+      }
+      return rule && rule.numbers.length > 1;
     }
     getPluralFormsOfKey(code, key) {
       let options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -42984,19 +43096,51 @@ window.xmlToJSON = function(xml) {
     }
     getSuffixes(code) {
       let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      let rule = this.getRule(code, options);
-      if (!rule) rule = this.getRule('dev', options);
-      if (!rule) return [];
-      return rule.resolvedOptions().pluralCategories.sort((pluralCategory1, pluralCategory2) => suffixesOrder[pluralCategory1] - suffixesOrder[pluralCategory2]).map(pluralCategory => `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ''}${pluralCategory}`);
+      const rule = this.getRule(code, options);
+      if (!rule) {
+        return [];
+      }
+      if (this.shouldUseIntlApi()) {
+        return rule.resolvedOptions().pluralCategories.sort((pluralCategory1, pluralCategory2) => suffixesOrder[pluralCategory1] - suffixesOrder[pluralCategory2]).map(pluralCategory => `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ''}${pluralCategory}`);
+      }
+      return rule.numbers.map(number => this.getSuffix(code, number, options));
     }
     getSuffix(code, count) {
       let options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       const rule = this.getRule(code, options);
       if (rule) {
-        return `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ''}${rule.select(count)}`;
+        if (this.shouldUseIntlApi()) {
+          return `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ''}${rule.select(count)}`;
+        }
+        return this.getSuffixRetroCompatible(rule, count);
       }
       this.logger.warn(`no plural rule found for: ${code}`);
-      return this.getSuffix('dev', count, options);
+      return '';
+    }
+    getSuffixRetroCompatible(rule, count) {
+      const idx = rule.noAbs ? rule.plurals(count) : rule.plurals(Math.abs(count));
+      let suffix = rule.numbers[idx];
+      if (this.options.simplifyPluralSuffix && rule.numbers.length === 2 && rule.numbers[0] === 1) {
+        if (suffix === 2) {
+          suffix = 'plural';
+        } else if (suffix === 1) {
+          suffix = '';
+        }
+      }
+      const returnSuffix = () => this.options.prepend && suffix.toString() ? this.options.prepend + suffix.toString() : suffix.toString();
+      if (this.options.compatibilityJSON === 'v1') {
+        if (suffix === 1) return '';
+        if (typeof suffix === 'number') return `_plural_${suffix.toString()}`;
+        return returnSuffix();
+      } else if (this.options.compatibilityJSON === 'v2') {
+        return returnSuffix();
+      } else if (this.options.simplifyPluralSuffix && rule.numbers.length === 2 && rule.numbers[0] === 1) {
+        return returnSuffix();
+      }
+      return this.options.prepend && idx.toString() ? this.options.prepend + idx.toString() : idx.toString();
+    }
+    shouldUseIntlApi() {
+      return !nonIntlVersions.includes(this.options.compatibilityJSON);
     }
   }
 
@@ -43016,7 +43160,7 @@ window.xmlToJSON = function(xml) {
       let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       this.logger = baseLogger.create('interpolator');
       this.options = options;
-      this.format = options?.interpolation?.format || (value => value);
+      this.format = options.interpolation && options.interpolation.format || (value => value);
       this.init(options);
     }
     init() {
@@ -43063,7 +43207,7 @@ window.xmlToJSON = function(xml) {
     }
     resetRegExp() {
       const getOrResetRegExp = (existingRegExp, pattern) => {
-        if (existingRegExp?.source === pattern) {
+        if (existingRegExp && existingRegExp.source === pattern) {
           existingRegExp.lastIndex = 0;
           return existingRegExp;
         }
@@ -43097,8 +43241,8 @@ window.xmlToJSON = function(xml) {
         });
       };
       this.resetRegExp();
-      const missingInterpolationHandler = options?.missingInterpolationHandler || this.options.missingInterpolationHandler;
-      const skipOnVariables = options?.interpolation?.skipOnVariables !== undefined ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables;
+      const missingInterpolationHandler = options && options.missingInterpolationHandler || this.options.missingInterpolationHandler;
+      const skipOnVariables = options && options.interpolation && options.interpolation.skipOnVariables !== undefined ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables;
       const todos = [{
         regex: this.regexpUnescape,
         safeValue: val => regexSafe(val)
@@ -43157,7 +43301,7 @@ window.xmlToJSON = function(xml) {
         optionsString = this.interpolate(optionsString, clonedOptions);
         const matchedSingleQuotes = optionsString.match(/'/g);
         const matchedDoubleQuotes = optionsString.match(/"/g);
-        if ((matchedSingleQuotes?.length ?? 0) % 2 === 0 && !matchedDoubleQuotes || matchedDoubleQuotes.length % 2 !== 0) {
+        if (matchedSingleQuotes && matchedSingleQuotes.length % 2 === 0 && !matchedDoubleQuotes || matchedDoubleQuotes.length % 2 !== 0) {
           optionsString = optionsString.replace(/'/g, '"');
         }
         try {
@@ -43325,7 +43469,7 @@ window.xmlToJSON = function(xml) {
         if (this.formats[formatName]) {
           let formatted = mem;
           try {
-            const valOptions = options?.formatParams?.[options.interpolationkey] || {};
+            const valOptions = options && options.formatParams && options.formatParams[options.interpolationkey] || {};
             const l = valOptions.locale || valOptions.lng || options.locale || options.lng || lng;
             formatted = this.formats[formatName](mem, l, {
               ...formatOptions,
@@ -43368,7 +43512,9 @@ window.xmlToJSON = function(xml) {
       this.retryTimeout = options.retryTimeout >= 1 ? options.retryTimeout : 350;
       this.state = {};
       this.queue = [];
-      this.backend?.init?.(services, options.backend, options);
+      if (this.backend && this.backend.init) {
+        this.backend.init(services, options.backend, options);
+      }
     }
     queueLoad(languages, namespaces, options, callback) {
       const toLoad = {};
@@ -43534,12 +43680,12 @@ window.xmlToJSON = function(xml) {
     saveMissing(languages, namespace, key, fallbackValue, isUpdate) {
       let options = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
       let clb = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : () => {};
-      if (this.services?.utils?.hasLoadedNamespace && !this.services?.utils?.hasLoadedNamespace(namespace)) {
+      if (this.services.utils && this.services.utils.hasLoadedNamespace && !this.services.utils.hasLoadedNamespace(namespace)) {
         this.logger.warn(`did not save key "${key}" as the namespace "${namespace}" was not yet loaded`, 'This means something IS WRONG in your setup. You access the t function before i18next.init / i18next.loadNamespace / i18next.changeLanguage was done. Wait for the callback or Promise to resolve before accessing it!!!');
         return;
       }
       if (key === undefined || key === null || key === '') return;
-      if (this.backend?.create) {
+      if (this.backend && this.backend.create) {
         const opts = {
           ...options,
           isUpdate
@@ -43572,7 +43718,7 @@ window.xmlToJSON = function(xml) {
 
   const get = () => ({
     debug: false,
-    initAsync: true,
+    initImmediate: true,
     ns: ['translation'],
     defaultNS: ['translation'],
     fallbackLng: ['dev'],
@@ -43634,10 +43780,9 @@ window.xmlToJSON = function(xml) {
     if (isString(options.ns)) options.ns = [options.ns];
     if (isString(options.fallbackLng)) options.fallbackLng = [options.fallbackLng];
     if (isString(options.fallbackNS)) options.fallbackNS = [options.fallbackNS];
-    if (options.supportedLngs?.indexOf?.('cimode') < 0) {
+    if (options.supportedLngs && options.supportedLngs.indexOf('cimode') < 0) {
       options.supportedLngs = options.supportedLngs.concat(['cimode']);
     }
-    if (typeof options.initImmediate === 'boolean') options.initAsync = options.initImmediate;
     return options;
   };
 
@@ -43663,7 +43808,7 @@ window.xmlToJSON = function(xml) {
       };
       bindMemberFunctions(this);
       if (callback && !this.isInitialized && !options.isClone) {
-        if (!this.options.initAsync) {
+        if (!this.options.initImmediate) {
           this.init(options, callback);
           return this;
         }
@@ -43681,7 +43826,7 @@ window.xmlToJSON = function(xml) {
         callback = options;
         options = {};
       }
-      if (options.defaultNS == null && options.ns) {
+      if (!options.defaultNS && options.defaultNS !== false && options.ns) {
         if (isString(options.ns)) {
           options.defaultNS = options.ns;
         } else if (options.ns.indexOf('translation') < 0) {
@@ -43694,10 +43839,12 @@ window.xmlToJSON = function(xml) {
         ...this.options,
         ...transformOptions(options)
       };
-      this.options.interpolation = {
-        ...defOpts.interpolation,
-        ...this.options.interpolation
-      };
+      if (this.options.compatibilityAPI !== 'v1') {
+        this.options.interpolation = {
+          ...defOpts.interpolation,
+          ...this.options.interpolation
+        };
+      }
       if (options.keySeparator !== undefined) {
         this.options.userDefinedKeySeparator = options.keySeparator;
       }
@@ -43718,7 +43865,7 @@ window.xmlToJSON = function(xml) {
         let formatter;
         if (this.modules.formatter) {
           formatter = this.modules.formatter;
-        } else {
+        } else if (typeof Intl !== 'undefined') {
           formatter = Formatter;
         }
         const lu = new LanguageUtil(this.options);
@@ -43729,6 +43876,7 @@ window.xmlToJSON = function(xml) {
         s.languageUtils = lu;
         s.pluralResolver = new PluralResolver(lu, {
           prepend: this.options.pluralSeparator,
+          compatibilityJSON: this.options.compatibilityJSON,
           simplifyPluralSuffix: this.options.simplifyPluralSuffix
         });
         if (formatter && (!this.options.interpolation.format || this.options.interpolation.format === defOpts.interpolation.format)) {
@@ -43799,10 +43947,10 @@ window.xmlToJSON = function(xml) {
           deferred.resolve(t);
           callback(err, t);
         };
-        if (this.languages && !this.isInitialized) return finish(null, this.t.bind(this));
+        if (this.languages && this.options.compatibilityAPI !== 'v1' && !this.isInitialized) return finish(null, this.t.bind(this));
         this.changeLanguage(this.options.lng, finish);
       };
-      if (this.options.resources || !this.options.initAsync) {
+      if (this.options.resources || !this.options.initImmediate) {
         load();
       } else {
         setTimeout(load, 0);
@@ -43815,7 +43963,7 @@ window.xmlToJSON = function(xml) {
       const usedLng = isString(language) ? language : this.language;
       if (typeof language === 'function') usedCallback = language;
       if (!this.options.resources || this.options.partialBundledLanguages) {
-        if (usedLng?.toLowerCase() === 'cimode' && (!this.options.preload || this.options.preload.length === 0)) return usedCallback();
+        if (usedLng && usedLng.toLowerCase() === 'cimode' && (!this.options.preload || this.options.preload.length === 0)) return usedCallback();
         const toLoad = [];
         const append = lng => {
           if (!lng) return;
@@ -43832,7 +43980,9 @@ window.xmlToJSON = function(xml) {
         } else {
           append(usedLng);
         }
-        this.options.preload?.forEach?.(l => append(l));
+        if (this.options.preload) {
+          this.options.preload.forEach(l => append(l));
+        }
         this.services.backendConnector.load(toLoad, this.options.ns, e => {
           if (!e && !this.resolvedLanguage && this.language) this.setResolvedLanguage(this.language);
           usedCallback(e);
@@ -43934,7 +44084,7 @@ window.xmlToJSON = function(xml) {
             setLngProps(l);
           }
           if (!this.translator.language) this.translator.changeLanguage(l);
-          this.services.languageDetector?.cacheUserLanguage?.(l);
+          if (this.services.languageDetector && this.services.languageDetector.cacheUserLanguage) this.services.languageDetector.cacheUserLanguage(l);
         }
         this.loadResources(l, err => {
           done(err, l);
@@ -43990,16 +44140,10 @@ window.xmlToJSON = function(xml) {
       return fixedT;
     }
     t() {
-      for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-        args[_key4] = arguments[_key4];
-      }
-      return this.translator?.translate(...args);
+      return this.translator && this.translator.translate(...arguments);
     }
     exists() {
-      for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-        args[_key5] = arguments[_key5];
-      }
-      return this.translator?.exists(...args);
+      return this.translator && this.translator.exists(...arguments);
     }
     setDefaultNamespace(ns) {
       this.options.defaultNS = ns;
@@ -44064,10 +44208,10 @@ window.xmlToJSON = function(xml) {
       return deferred;
     }
     dir(lng) {
-      if (!lng) lng = this.resolvedLanguage || (this.languages?.length > 0 ? this.languages[0] : this.language);
+      if (!lng) lng = this.resolvedLanguage || (this.languages && this.languages.length > 0 ? this.languages[0] : this.language);
       if (!lng) return 'rtl';
       const rtlLngs = ['ar', 'shu', 'sqr', 'ssh', 'xaa', 'yhd', 'yud', 'aao', 'abh', 'abv', 'acm', 'acq', 'acw', 'acx', 'acy', 'adf', 'ads', 'aeb', 'aec', 'afb', 'ajp', 'apc', 'apd', 'arb', 'arq', 'ars', 'ary', 'arz', 'auz', 'avl', 'ayh', 'ayl', 'ayn', 'ayp', 'bbz', 'pga', 'he', 'iw', 'ps', 'pbt', 'pbu', 'pst', 'prp', 'prd', 'ug', 'ur', 'ydd', 'yds', 'yih', 'ji', 'yi', 'hbo', 'men', 'xmn', 'fa', 'jpr', 'peo', 'pes', 'prs', 'dv', 'sam', 'ckb'];
-      const languageUtils = this.services?.languageUtils || new LanguageUtil(get());
+      const languageUtils = this.services && this.services.languageUtils || new LanguageUtil(get());
       return rtlLngs.indexOf(languageUtils.getLanguagePartFromCode(lng)) > -1 || lng.toLowerCase().indexOf('-arab') > 1 ? 'rtl' : 'ltr';
     }
     static createInstance() {
@@ -44102,24 +44246,13 @@ window.xmlToJSON = function(xml) {
         hasLoadedNamespace: clone.hasLoadedNamespace.bind(clone)
       };
       if (forkResourceStore) {
-        const clonedData = Object.keys(this.store.data).reduce((prev, l) => {
-          prev[l] = {
-            ...this.store.data[l]
-          };
-          return Object.keys(prev[l]).reduce((acc, n) => {
-            acc[n] = {
-              ...prev[l][n]
-            };
-            return acc;
-          }, {});
-        }, {});
-        clone.store = new ResourceStore(clonedData, mergedOptions);
+        clone.store = new ResourceStore(this.store.data, mergedOptions);
         clone.services.resourceStore = clone.store;
       }
       clone.translator = new Translator(clone.services, mergedOptions);
       clone.translator.on('*', function (event) {
-        for (var _len6 = arguments.length, args = new Array(_len6 > 1 ? _len6 - 1 : 0), _key6 = 1; _key6 < _len6; _key6++) {
-          args[_key6 - 1] = arguments[_key6];
+        for (var _len4 = arguments.length, args = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+          args[_key4 - 1] = arguments[_key4];
         }
         clone.emit(event, ...args);
       });
@@ -54515,7 +54648,7 @@ jquery-base-slider-public.js
     Loading (key-)phrases from json-file(s) using fcoo/promise-get
     ***********************************************************************/
     i18next._loadJSON = function( jsonFileName, options, resolve ){
-        jsonFileName = $.isArray(jsonFileName) ? jsonFileName : [jsonFileName];
+        jsonFileName =  Array.isArray(jsonFileName) ? jsonFileName : [jsonFileName];
 
         $.each( jsonFileName, function( index, url ){
             Promise.getJSON( url, options, resolve );
@@ -54654,10 +54787,11 @@ jquery-base-slider-public.js
 
     /***********************************************************************
     sentence ( langValues, options )
+    s ( langValues, options )
     - langValues = { [lang: value]xN }
     A single translation of a sentence. No key used or added
     ***********************************************************************/
-    i18next.sentence = function( langValues, options ){
+    i18next.sentence = i18next.s = function( langValues, options ){
         var nsTemp = '__SENTENCE_TEMP__',
             keyTemp = '__SENTENCE_KEY__',
             _this = this,
@@ -54675,11 +54809,13 @@ jquery-base-slider-public.js
     };
 
     /***********************************************************************
-    s ( langValues, options )
-    - langValues = { [lang: value]xN }
+    sentenceArray = function( textArray, separator, options)
     ***********************************************************************/
-    i18next.s = function( langValues, options ){
-        return this.sentence( langValues, options );
+    i18next.sentenceArray = function( textArray = [], separator = '', options){
+        textArray = Array.isArray(textArray) ? textArray : [textArray];
+        let resultArray = [];
+        textArray.forEach( txt => resultArray.push( typeof txt == 'object' ? i18next.sentence(txt, options) : txt) );
+        return resultArray.join( typeof separator == 'object' ? i18next.sentence(separator) : separator );
     };
 
 
@@ -57623,7 +57759,7 @@ See https://ilyashubin.github.io/scrollbooster/
 
 ;
 //! moment-timezone.js
-//! version : 0.6.0
+//! version : 0.6.2
 //! Copyright (c) JS Foundation and other contributors
 //! license : MIT
 //! github.com/moment/moment-timezone
@@ -57653,7 +57789,7 @@ See https://ilyashubin.github.io/scrollbooster/
 	// 	return moment;
 	// }
 
-	var VERSION = "0.6.0",
+	var VERSION = "0.6.2",
 		zones = {},
 		links = {},
 		countries = {},
@@ -58348,75 +58484,75 @@ See https://ilyashubin.github.io/scrollbooster/
 	}
 
 	loadData({
-		"version": "2025b",
+		"version": "2026b",
 		"zones": [
 			"Africa/Abidjan|GMT|0|0||48e5",
 			"Africa/Nairobi|EAT|-30|0||47e5",
 			"Africa/Algiers|CET|-10|0||26e5",
 			"Africa/Lagos|WAT|-10|0||17e6",
 			"Africa/Khartoum|CAT|-20|0||51e5",
-			"Africa/Cairo|EET EEST|-20 -30|01010101010101010|29NW0 1cL0 1cN0 1fz0 1a10 1fz0 1a10 1fz0 1cN0 1cL0 1cN0 1cL0 1cN0 1cL0 1cN0 1fz0|15e6",
-			"Africa/Casablanca|+01 +00|-10 0|010101010101010101010101|22sq0 gM0 2600 e00 2600 gM0 2600 e00 28M0 e00 2600 gM0 2600 e00 28M0 e00 2600 gM0 2600 e00 2600 gM0 2600|32e5",
-			"Europe/Paris|CET CEST|-10 -20|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|11e6",
+			"Africa/Cairo|EET EEST|-20 -30|0101010101010101010|29NW0 1cL0 1cN0 1fz0 1a10 1fz0 1a10 1fz0 1cN0 1cL0 1cN0 1cL0 1cN0 1cL0 1cN0 1fz0 1a10 1fz0|15e6",
+			"Africa/Casablanca|+01 +00|-10 0|010101010101010101010101|24Pe0 e00 2600 gM0 2600 e00 28M0 e00 2600 gM0 2600 e00 28M0 e00 2600 gM0 2600 e00 2600 gM0 2600 e00 28M0|32e5",
+			"Europe/Paris|CET CEST|-10 -20|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|11e6",
 			"Africa/Johannesburg|SAST|-20|0||84e5",
 			"Africa/Juba|EAT CAT|-30 -20|01|24nx0|",
 			"Africa/Tripoli|EET|-20|0||11e5",
-			"America/Adak|HST HDT|a0 90|01010101010101010101010|22bM0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|326",
-			"America/Anchorage|AKST AKDT|90 80|01010101010101010101010|22bL0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|30e4",
+			"America/Adak|HST HDT|a0 90|01010101010101010101010|24Ec0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|326",
+			"America/Anchorage|AKST AKDT|90 80|01010101010101010101010|24Eb0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|30e4",
 			"America/Santo_Domingo|AST|40|0||29e5",
 			"America/Sao_Paulo|-03|30|0||20e6",
-			"America/Asuncion|-03 -04|30 40|01010101010|22hf0 1ip0 19X0 1fB0 19X0 1fB0 19X0 1fB0 19X0 1ip0|28e5",
+			"America/Asuncion|-03 -04|30 40|010101010|24JD0 1fB0 19X0 1fB0 19X0 1fB0 19X0 1ip0|28e5",
 			"America/Panama|EST|50|0||15e5",
-			"America/Mexico_City|CST CDT|60 50|0101010|22mU0 1lb0 14p0 1nX0 11B0 1nX0|20e6",
+			"America/Mexico_City|CST CDT|60 50|01010|24Mw0 1nX0 11B0 1nX0|20e6",
 			"America/Managua|CST|60|0||22e5",
 			"America/Caracas|-04|40|0||29e5",
 			"America/Lima|-05|50|0||11e6",
-			"America/Denver|MST MDT|70 60|01010101010101010101010|22bJ0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|26e5",
-			"America/Chicago|CST CDT|60 50|01010101010101010101010|22bI0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|92e5",
-			"America/Chihuahua|MST MDT CST|70 60 60|0101012|22mV0 1lb0 14p0 1nX0 11B0 1nX0|81e4",
-			"America/Ciudad_Juarez|MST MDT CST|70 60 60|010101201010101010101010|22bJ0 1zb0 Rd0 1zb0 Op0 1wn0 cm0 EP0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|",
-			"America/Coyhaique|-03 -04|30 40|01010101010|22mP0 11B0 1nX0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0|",
+			"America/Denver|MST MDT|70 60|01010101010101010101010|24E90 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|26e5",
+			"America/Chicago|CST CDT|60 50|01010101010101010101010|24E80 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|92e5",
+			"America/Chihuahua|MST MDT CST|70 60 60|01012|24Mx0 1nX0 11B0 1nX0|81e4",
+			"America/Ciudad_Juarez|MST MDT CST|70 60 60|010120101010101010101010|24E90 1zb0 Op0 1wn0 cm0 EP0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|",
+			"America/Coyhaique|-03 -04|30 40|010101010|24Mr0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0|",
 			"America/Phoenix|MST|70|0||42e5",
-			"America/Whitehorse|PST PDT MST|80 70 70|012|22bK0 1z90|23e3",
-			"America/New_York|EST EDT|50 40|01010101010101010101010|22bH0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|21e6",
-			"America/Los_Angeles|PST PDT|80 70|01010101010101010101010|22bK0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|15e6",
-			"America/Halifax|AST ADT|40 30|01010101010101010101010|22bG0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|39e4",
-			"America/Godthab|-03 -02 -01|30 20 10|0101010121212121212121|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 2so0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|17e3",
-			"America/Havana|CST CDT|50 40|01010101010101010101010|22bF0 1zc0 Rc0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Rc0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0|21e5",
-			"America/Mazatlan|MST MDT|70 60|0101010|22mV0 1lb0 14p0 1nX0 11B0 1nX0|44e4",
-			"America/Miquelon|-03 -02|30 20|01010101010101010101010|22bF0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|61e2",
+			"America/New_York|EST EDT|50 40|01010101010101010101010|24E70 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|21e6",
+			"America/Los_Angeles|PST PDT|80 70|01010101010101010101010|24Ea0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|15e6",
+			"America/Halifax|AST ADT|40 30|01010101010101010101010|24E60 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|39e4",
+			"America/Godthab|-03 -02 -01|30 20 10|0101012121212121212121|24JB0 1qM0 WM0 1qM0 WM0 2so0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|17e3",
+			"America/Havana|CST CDT|50 40|01010101010101010101010|24E50 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Rc0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0 Oo0 1zc0|21e5",
+			"America/Mazatlan|MST MDT|70 60|01010|24Mx0 1nX0 11B0 1nX0|44e4",
+			"America/Miquelon|-03 -02|30 20|01010101010101010101010|24E50 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|61e2",
 			"America/Noronha|-02|20|0||30e2",
-			"America/Ojinaga|MST MDT CST CDT|70 60 60 50|01010123232323232323232|22bJ0 1zb0 Rd0 1zb0 Op0 1wn0 Rc0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|23e3",
-			"America/Santiago|-03 -04|30 40|01010101010101010101010|22mP0 11B0 1nX0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 11B0|62e5",
-			"America/Scoresbysund|-01 +00 -02|10 0 20|0101010102020202020202|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 2pA0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|452",
-			"America/St_Johns|NST NDT|3u 2u|01010101010101010101010|22bFu 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|11e4",
-			"Antarctica/Casey|+11 +08|-b0 -80|01010101|22bs0 1o01 14kX 1lf1 14kX 1lf1 13bX|10",
+			"America/Ojinaga|MST MDT CST CDT|70 60 60 50|01012323232323232323232|24E90 1zb0 Op0 1wn0 Rc0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|23e3",
+			"America/Santiago|-03 -04|30 40|01010101010101010101010|24Mr0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 11B0 1nX0 11B0|62e5",
+			"America/Scoresbysund|-01 +00 -02|10 0 20|0101010202020202020202|24JB0 1qM0 WM0 1qM0 WM0 1qM0 2pA0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|452",
+			"America/St_Johns|NST NDT|3u 2u|01010101010101010101010|24E5u 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Rd0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|11e4",
+			"America/Vancouver|PST PDT MST|80 70 70|0101010101012|24Ea0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0 Op0 1zb0|23e5",
+			"Antarctica/Casey|+11 +08|-b0 -80|010101|24DN0 1lf1 14kX 1lf1 13bX|10",
 			"Asia/Bangkok|+07|-70|0||15e6",
 			"Asia/Vladivostok|+10|-a0|0||60e4",
-			"Australia/Sydney|AEDT AEST|-b0 -a0|01010101010101010101010|22mE0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0|40e5",
+			"Australia/Sydney|AEDT AEST|-b0 -a0|01010101010101010101010|24Mg0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0|40e5",
 			"Asia/Tashkent|+05|-50|0||23e5",
-			"Pacific/Auckland|NZDT NZST|-d0 -c0|01010101010101010101010|22mC0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1io0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1cM0 1fA0 1a00|14e5",
+			"Pacific/Auckland|NZDT NZST|-d0 -c0|01010101010101010101010|24Me0 1a00 1fA0 1a00 1fA0 1a00 1io0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1cM0 1fA0 1a00 1fA0 1a00|14e5",
 			"Europe/Istanbul|+03|-30|0||13e6",
-			"Antarctica/Troll|+00 +02|0 -20|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|40",
+			"Antarctica/Troll|+00 +02|0 -20|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|40",
 			"Antarctica/Vostok|+07 +05|-70 -50|01|2bnv0|25",
 			"Asia/Almaty|+06 +05|-60 -50|01|2bR60|15e5",
-			"Asia/Amman|EET EEST +03|-20 -30 -30|0101012|22ja0 1qM0 WM0 1qM0 LA0 1C00|25e5",
+			"Asia/Amman|EET EEST +03|-20 -30 -30|01012|24IK0 1qM0 LA0 1C00|25e5",
 			"Asia/Kamchatka|+12|-c0|0||18e4",
 			"Asia/Dubai|+04|-40|0||39e5",
-			"Asia/Beirut|EET EEST|-20 -30|01010101010101010101010|22jW0 1nX0 11B0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0|22e5",
+			"Asia/Beirut|EET EEST|-20 -30|01010101010101010101010|24Jy0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0 11B0 1nX0|22e5",
 			"Asia/Dhaka|+06|-60|0||16e6",
 			"Asia/Kuala_Lumpur|+08|-80|0||71e5",
 			"Asia/Kolkata|IST|-5u|0||15e6",
 			"Asia/Chita|+09|-90|0||33e4",
 			"Asia/Shanghai|CST|-80|0||23e6",
 			"Asia/Colombo|+0530|-5u|0||22e5",
-			"Asia/Damascus|EET EEST +03|-20 -30 -30|0101012|22ja0 1qL0 WN0 1qL0 WN0 1qL0|26e5",
-			"Europe/Athens|EET EEST|-20 -30|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|35e5",
-			"Asia/Gaza|EET EEST|-20 -30|01010101010101010101010|22jy0 1o00 11A0 1qo0 XA0 1qp0 1cN0 1cL0 1a10 1fz0 17d0 1in0 11B0 1nX0 11B0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0|18e5",
+			"Asia/Damascus|EET EEST +03|-20 -30 -30|01012|24IK0 1qL0 WN0 1qL0|26e5",
+			"Europe/Athens|EET EEST|-20 -30|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|35e5",
+			"Asia/Gaza|EET EEST|-20 -30|01010101010101010101010|24Ja0 1qo0 XA0 1qp0 1cN0 1cL0 1a10 1fz0 17d0 1in0 11B0 1nX0 11B0 1qL0 WN0 1qL0 WN0 1qL0 11B0 1nX0 11B0 1nX0|18e5",
 			"Asia/Hong_Kong|HKT|-80|0||73e5",
 			"Asia/Jakarta|WIB|-70|0||31e6",
 			"Asia/Jayapura|WIT|-90|0||26e4",
-			"Asia/Jerusalem|IST IDT|-20 -30|01010101010101010101010|22jc0 1oL0 10N0 1rz0 W10 1rz0 W10 1rz0 10N0 1oL0 10N0 1oL0 10N0 1oL0 10N0 1rz0 W10 1rz0 W10 1rz0 10N0 1oL0|81e4",
+			"Asia/Jerusalem|IST IDT|-20 -30|01010101010101010101010|24IM0 1rz0 W10 1rz0 W10 1rz0 10N0 1oL0 10N0 1oL0 10N0 1oL0 10N0 1rz0 W10 1rz0 W10 1rz0 10N0 1oL0 10N0 1oL0|81e4",
 			"Asia/Kabul|+0430|-4u|0||46e5",
 			"Asia/Karachi|PKT|-50|0||24e6",
 			"Asia/Kathmandu|+0545|-5J|0||12e5",
@@ -58425,19 +58561,19 @@ See https://ilyashubin.github.io/scrollbooster/
 			"Asia/Manila|PST|-80|0||24e6",
 			"Asia/Seoul|KST|-90|0||23e6",
 			"Asia/Rangoon|+0630|-6u|0||48e5",
-			"Asia/Tehran|+0330 +0430|-3u -4u|0101010|22gIu 1dz0 1cN0 1dz0 1cp0 1dz0|14e6",
+			"Asia/Tehran|+0330 +0430|-3u -4u|01010|24H8u 1dz0 1cp0 1dz0|14e6",
 			"Asia/Tokyo|JST|-90|0||38e6",
-			"Atlantic/Azores|-01 +00|10 0|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|25e4",
-			"Europe/Lisbon|WET WEST|0 -10|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|27e5",
+			"Atlantic/Azores|-01 +00|10 0|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|25e4",
+			"Europe/Lisbon|WET WEST|0 -10|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|27e5",
 			"Atlantic/Cape_Verde|-01|10|0||50e4",
-			"Australia/Adelaide|ACDT ACST|-au -9u|01010101010101010101010|22mEu 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0|11e5",
+			"Australia/Adelaide|ACDT ACST|-au -9u|01010101010101010101010|24Mgu 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0|11e5",
 			"Australia/Brisbane|AEST|-a0|0||20e5",
 			"Australia/Darwin|ACST|-9u|0||12e4",
 			"Australia/Eucla|+0845|-8J|0||368",
-			"Australia/Lord_Howe|+11 +1030|-b0 -au|01010101010101010101010|22mD0 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1cMu 1fzu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1fAu 1cLu 1cMu|347",
+			"Australia/Lord_Howe|+11 +1030|-b0 -au|01010101010101010101010|24Mf0 1cMu 1cLu 1cMu 1cLu 1cMu 1fzu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1cMu 1cLu 1fAu 1cLu 1cMu 1cLu 1cMu|347",
 			"Australia/Perth|AWST|-80|0||18e5",
-			"Pacific/Easter|-05 -06|50 60|01010101010101010101010|22mP0 11B0 1nX0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 11B0|30e2",
-			"Europe/Dublin|GMT IST|0 -10|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|12e5",
+			"Pacific/Easter|-05 -06|50 60|01010101010101010101010|24Mr0 11B0 1nX0 14p0 1lb0 11B0 1qL0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1nX0 11B0 1qL0 WN0 1qL0 11B0 1nX0 11B0|30e2",
+			"Europe/Dublin|GMT IST|0 -10|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|12e5",
 			"Etc/GMT-1|+01|-10|0||",
 			"Pacific/Tongatapu|+13|-d0|0||75e3",
 			"Pacific/Kiritimati|+14|-e0|0||51e2",
@@ -58450,18 +58586,17 @@ See https://ilyashubin.github.io/scrollbooster/
 			"Pacific/Pitcairn|-08|80|0||56",
 			"Pacific/Gambier|-09|90|0||125",
 			"Etc/UTC|UTC|0|0||",
-			"Europe/London|GMT BST|0 -10|01010101010101010101010|22k10 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|10e6",
-			"Europe/Chisinau|EET EEST|-20 -30|01010101010101010101010|22k00 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00|67e4",
+			"Europe/London|GMT BST|0 -10|01010101010101010101010|24JB0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|10e6",
+			"Europe/Chisinau|EET EEST|-20 -30|01010101010101010101010|24JA0 1qM0 WN0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|67e4",
 			"Europe/Moscow|MSK|-30|0||16e6",
-			"Europe/Volgograd|+04 MSK|-40 -30|01|249a0|10e5",
 			"Pacific/Honolulu|HST|a0|0||37e4",
-			"Pacific/Chatham|+1345 +1245|-dJ -cJ|01010101010101010101010|22mC0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1io0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1cM0 1fA0 1a00|600",
-			"Pacific/Apia|+14 +13|-e0 -d0|0101|22mC0 1a00 1fA0|37e3",
-			"Pacific/Fiji|+13 +12|-d0 -c0|0101|21N20 2hc0 bc0|88e4",
+			"Pacific/Chatham|+1345 +1245|-dJ -cJ|01010101010101010101010|24Me0 1a00 1fA0 1a00 1fA0 1a00 1io0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1a00 1fA0 1cM0 1fA0 1a00 1fA0 1a00|600",
+			"Pacific/Apia|+14 +13|-e0 -d0|01|24Me0|37e3",
+			"Pacific/Fiji|+13 +12|-d0 -c0|01|24hq0|88e4",
 			"Pacific/Guam|ChST|-a0|0||17e4",
 			"Pacific/Marquesas|-0930|9u|0||86e2",
 			"Pacific/Pago_Pago|SST|b0|0||37e2",
-			"Pacific/Norfolk|+12 +11|-c0 -b0|01010101010101010101010|22mD0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0|25e4"
+			"Pacific/Norfolk|+12 +11|-c0 -b0|01010101010101010101010|24Mf0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cM0 1cM0 1cM0|25e4"
 		],
 		"links": [
 			"Africa/Abidjan|Africa/Accra",
@@ -58588,8 +58723,6 @@ See https://ilyashubin.github.io/scrollbooster/
 			"America/Los_Angeles|America/Ensenada",
 			"America/Los_Angeles|America/Santa_Isabel",
 			"America/Los_Angeles|America/Tijuana",
-			"America/Los_Angeles|America/Vancouver",
-			"America/Los_Angeles|Canada/Pacific",
 			"America/Los_Angeles|Mexico/BajaNorte",
 			"America/Los_Angeles|PST8PDT",
 			"America/Los_Angeles|US/Pacific",
@@ -58643,9 +58776,12 @@ See https://ilyashubin.github.io/scrollbooster/
 			"America/Panama|EST",
 			"America/Panama|Jamaica",
 			"America/Phoenix|America/Creston",
+			"America/Phoenix|America/Dawson",
 			"America/Phoenix|America/Dawson_Creek",
 			"America/Phoenix|America/Fort_Nelson",
 			"America/Phoenix|America/Hermosillo",
+			"America/Phoenix|America/Whitehorse",
+			"America/Phoenix|Canada/Yukon",
 			"America/Phoenix|MST",
 			"America/Phoenix|US/Arizona",
 			"America/Santiago|Chile/Continental",
@@ -58708,8 +58844,7 @@ See https://ilyashubin.github.io/scrollbooster/
 			"America/Sao_Paulo|Brazil/East",
 			"America/Sao_Paulo|Etc/GMT+3",
 			"America/St_Johns|Canada/Newfoundland",
-			"America/Whitehorse|America/Dawson",
-			"America/Whitehorse|Canada/Yukon",
+			"America/Vancouver|Canada/Pacific",
 			"Asia/Almaty|Asia/Qostanay",
 			"Asia/Bangkok|Antarctica/Davis",
 			"Asia/Bangkok|Asia/Barnaul",
@@ -58889,6 +59024,7 @@ See https://ilyashubin.github.io/scrollbooster/
 			"Europe/London|GB-Eire",
 			"Europe/Moscow|Europe/Kirov",
 			"Europe/Moscow|Europe/Simferopol",
+			"Europe/Moscow|Europe/Volgograd",
 			"Europe/Moscow|W-SU",
 			"Europe/Paris|Africa/Ceuta",
 			"Europe/Paris|Arctic/Longyearbyen",
@@ -58987,7 +59123,7 @@ See https://ilyashubin.github.io/scrollbooster/
 			"BW|Africa/Maputo Africa/Gaborone",
 			"BY|Europe/Minsk",
 			"BZ|America/Belize",
-			"CA|America/St_Johns America/Halifax America/Glace_Bay America/Moncton America/Goose_Bay America/Toronto America/Iqaluit America/Winnipeg America/Resolute America/Rankin_Inlet America/Regina America/Swift_Current America/Edmonton America/Cambridge_Bay America/Inuvik America/Dawson_Creek America/Fort_Nelson America/Whitehorse America/Dawson America/Vancouver America/Panama America/Puerto_Rico America/Phoenix America/Blanc-Sablon America/Atikokan America/Creston",
+			"CA|America/St_Johns America/Halifax America/Glace_Bay America/Moncton America/Goose_Bay America/Toronto America/Iqaluit America/Winnipeg America/Resolute America/Rankin_Inlet America/Regina America/Swift_Current America/Edmonton America/Cambridge_Bay America/Inuvik America/Vancouver America/Dawson_Creek America/Fort_Nelson America/Whitehorse America/Dawson America/Panama America/Puerto_Rico America/Phoenix America/Blanc-Sablon America/Atikokan America/Creston",
 			"CC|Asia/Yangon Indian/Cocos",
 			"CD|Africa/Maputo Africa/Lagos Africa/Kinshasa Africa/Lubumbashi",
 			"CF|Africa/Lagos Africa/Bangui",
@@ -64125,18 +64261,23 @@ module.exports = g;
                     $icon.addClass(className);
             });
         }
-        else {
-            var allClassNames = options.icon || options.class || '';
+        else
+            if (options instanceof $){
+                $icon = options.clone();
+                $icon.addClass(className);
+            }
+                else {
+                var allClassNames = options.icon || options.class || '';
 
-            //Append $.FONTAWESOME_PREFIX if icon don't contain fontawesome prefix ("fa?")
-            if (allClassNames.search(iconfontPrefixRegExp) == -1)
-                allClassNames = $.FONTAWESOME_PREFIX + ' ' + allClassNames;
+                //Append $.FONTAWESOME_PREFIX if icon don't contain fontawesome prefix ("fa?")
+                if (allClassNames.search(iconfontPrefixRegExp) == -1)
+                    allClassNames = $.FONTAWESOME_PREFIX + ' ' + allClassNames;
 
-            allClassNames = allClassNames + ' ' + (className || '');
+                allClassNames = allClassNames + ' ' + (className || '');
 
-            $icon = $._bsCreateElement( 'i', null, title, null, allClassNames );
+                $icon = $._bsCreateElement( 'i', null, title, null, allClassNames );
 
-        }
+            }
         $icon.appendTo( $appendTo );
         return $icon;
     };
@@ -66870,15 +67011,6 @@ uri         : {default: "Please enter a valid URI"}
                 class: square ? 'header-icon-selected' : null
             },
 
-            extend  : square ? 'fa-square-plus'  : 'fa-chevron-circle-up',
-            diminish: square ? 'fa-square-minus' : 'fa-chevron-circle-down',
-
-            fullScreenOn : square ? 'fa-expand'   : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-expand fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
-            fullScreenOff: square ? 'fa-compress' : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-compress fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
-
-
-            new     : square ? 'fa-window-maximize' : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-window-maximize fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
-
             error : {
                 icon : square ? 'fa-exclamation' : [ 'fas fa-circle back text-danger', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle', 'fas fa-exclamation fa-inside-circle-xmark'],
                 class: square ? 'header-icon-error' : null
@@ -66896,6 +67028,19 @@ uri         : {default: "Please enter a valid URI"}
 
             info    : square ? 'fa-info' : 'fa-circle-info',
             help    : square ? 'fa-question' : 'fa-circle-question',
+
+            down: square ? 'fa-square-arrow-down' : 'fa-circle-arrow-down',
+            up  : square ? 'fa-square-arrow-up'   : 'fa-circle-arrow-up',
+
+            extend   : square ? 'fa-square-plus'  : 'fa-chevron-circle-up',
+            diminish : square ? 'fa-square-minus' : 'fa-chevron-circle-down',
+
+            fullScreenOn : square ? 'fa-expand'   : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-expand fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
+            fullScreenOff: square ? 'fa-compress' : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-compress fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
+
+
+            new     : square ? 'fa-window-maximize' : [ $.FONTAWESOME_PREFIX_STANDARD + ' fa-window-maximize fa-inside-circle2', $.FONTAWESOME_PREFIX_STANDARD + ' fa-circle'],
+
 
             close   : {
                 icon : square ? 'fas fa-xmark' : ['fas fa-circle show-for-hover fa-hover-color-red', 'fa-xmark fa-inside-circle-xmark fa-hover-color-white', $.FONTAWESOME_PREFIX_STANDARD+' fa-circle'],
@@ -66958,7 +67103,7 @@ uri         : {default: "Please enter a valid URI"}
 
             //Add icons
             let headerIcons = useSquareIcons ? bsHeaderIconsSquare : bsHeaderIcons;
-            ['back', 'forward', 'pin', 'unpin', 'diminish', 'extend', 'fullScreenOn', 'fullScreenOff', 'new', 'error', 'alert', 'warning', 'info', 'help', 'close'].forEach( (id) => {
+            ['back', 'forward', 'pin', 'unpin', 'new', 'error', 'alert', 'warning', 'info', 'help', 'down', 'up', 'diminish', 'extend', 'fullScreenOn', 'fullScreenOff', 'close'].forEach( (id) => {
                 let iconOptions = options.icons[id];
                 if (iconOptions && (iconOptions.onClick || (typeof iconOptions == 'function'))){
                     if (typeof iconOptions == 'function')
@@ -68491,6 +68636,12 @@ jquery-bootstrap-modal-promise.js
             this.setHeaderIconEnabled(id, true);
         },
 
+        headerIconUpOn : function(){ return this.headerIconUpToggle(true); },
+        headerIconUpOff: function(){ return this.headerIconUpToggle(false); },
+        headerIconUpToggle: function(on){
+            this.bsModal.$header.modernizrToggle('modal-header-icon-up-on', !!on);
+        },
+
 
         /******************************************************
         update
@@ -68852,7 +69003,9 @@ jquery-bootstrap-modal-promise.js
 
                 extend          : { className: iconExtendClassName,     onClick: multiSize ? modalExtend   : null,                        altEvents:'swipeup'   },
                 diminish        : { className: iconDiminishClassName,   onClick: multiSize ? modalDiminish : null,                        altEvents:'swipedown' },
+
                 new             : {                                     onClick: options.onNew     ? options.onNew.bind(this)     : null                        },
+
                 info            : {                                     onClick: options.onInfo    ? options.onInfo.bind(this)    : null                        },
                 warning         : {                                     onClick: options.onWarning ? options.onWarning.bind(this) : null                        },
                 alert           : {                                     onClick: options.onAlert   ? options.onAlert.bind(this)   : null                        },
@@ -68875,6 +69028,23 @@ jquery-bootstrap-modal-promise.js
         //Hide the close icon on the header
         if (options.noCloseIconOnHeader && options.icons && options.icons.close)
             options.icons.close.hidden = true;
+
+        //If options.upDownIconAsRadio is set => adjust icons and show up- and down-icons in header as radio
+        if (options.upDownIconAsRadio && options.icons.down && options.icons.up){
+            $modalContent.addClass('modal-header-icon-up-and-down-as-radio');
+            ['up', 'down'].forEach( id => {
+                let iconOpt = options.icons[id];
+                if (typeof iconOpt == 'function')
+                    iconOpt = {onClick: iconOpt};
+
+                iconOpt.className = iconOpt.className || '';
+                iconOpt.className = iconOpt.className +  ' ' + (id == 'up' ? 'show-for-modal-header-icon-up-on' : 'hide-for-modal-header-icon-up-on');
+
+                options.icons[id] = iconOpt;
+            });
+        }
+
+
 
         //Add close-botton at beginning. Avoid by setting options.closeButton = false
         if (options.closeButton)
@@ -69461,6 +69631,12 @@ jquery-bootstrap-modal-promise.js
             if (options.show)
                 $result.show();
         }
+
+        if (options.upDownIconAsRadio){
+            $result.headerIconUpOff();
+        }
+
+
 
         //Save some options in bsModal
         ['noReopenFullScreen'].forEach( id => {
